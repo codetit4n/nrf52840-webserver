@@ -1,35 +1,57 @@
-#include <stdio.h>
-#include <zephyr/drivers/gpio.h>
-#include <zephyr/kernel.h>
+#include <stdint.h>
 
-#define SLEEP_TIME_MS 100
+/*
+ * REG32(addr) lets us treat a 32-bit memory address as a
+ * read/write register.
+ *
+ * 'volatile' tells the compiler:
+ *   "Don't cache this, don't optimize away reads/writes.
+ *    Hardware can change this behind your back."
+ */
+#define REG32(addr) (*(volatile uint32_t *)(addr))
 
-#define LED0_NODE DT_ALIAS(led0)
+/*
+ * Base address for GPIO Port 0 on nRF52840.
+ * This comes from the datasheet / product specification.
+ */
+#define NRF_P0_BASE 0x50000000UL
 
-static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
+/*
+ * P0_OUT and P0_DIR are specific registers inside the GPIO block.
+ * Their offsets (0x504 and 0x514) also come from the datasheet.
+ *
+ * Final addresses:
+ *   P0_OUT -> 0x50000000 + 0x504 = 0x50000504
+ *   P0_DIR -> 0x50000000 + 0x514 = 0x50000514
+ */
+#define P0_OUT REG32(NRF_P0_BASE + 0x504)
+#define P0_DIR REG32(NRF_P0_BASE + 0x514)
+
+#define LED_PIN 17
+
+static void delay(volatile uint32_t ctr) {
+  while (ctr--) {
+    __asm__ volatile("nop");
+  }
+}
 
 int main(void) {
-  int ret;
-  bool led_state = true;
 
-  if (!gpio_is_ready_dt(&led)) {
-    return 0;
-  }
-
-  ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
-  if (ret < 0) {
-    return 0;
-  }
-
+  P0_DIR |= (1u << LED_PIN);
+  // P0_OUT |= (1u << LED_PIN);
+  //  Turn LED ON (active low)
+  P0_OUT &= ~(1u << LED_PIN);
   while (1) {
-    ret = gpio_pin_toggle_dt(&led);
-    if (ret < 0) {
-      return 0;
-    }
+    //   // Set PIN HIGH
+    //   P0_OUT |= (1u << LED_PIN);
 
-    led_state = !led_state;
-    printf("LED state: %s\n", led_state ? "ON" : "OFF");
-    k_msleep(SLEEP_TIME_MS);
+    //  // Delay
+    //  delay(1000000);
+
+    //  // Set PIN LOW
+    //  P0_OUT &= ~(1u << LED_PIN);
+
+    //  // Delay
+    //  delay(1000000);
   }
-  return 0;
 }
