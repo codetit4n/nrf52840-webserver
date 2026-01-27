@@ -58,9 +58,10 @@ LDFLAGS  += -L$(PLATFORM)
 # -------------------------------------------------
 # Sources
 # -------------------------------------------------
-APP_SRCS := \
-	src/main.c \
-	src/freertos_hooks.c
+APP_SRCS := $(wildcard src/*.c) \
+            $(wildcard src/*/*.c) \
+            $(wildcard src/*/*/*.c)
+
 
 FREERTOS_SRCS := \
 	$(FREERTOS)/list.c \

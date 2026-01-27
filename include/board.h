@@ -2,67 +2,42 @@
 
 #include "nrf52840.h"
 
-/*
- * Board support header (minimal).
- * NOTE:
- * - This file is "board" level, not "chip" level.
- *   The chip-level registers/definitions come from nrf52840.h (MDK).
- */
-
-/* ----------------------------- */
-/* Board identity                */
-/* ----------------------------- */
 #define BOARD_NAME "nRF52840-DK"
 
-/* ----------------------------- */
-/* LED mapping                   */
-/* ----------------------------- */
-/*
- * nRF52840 DK:
- * - LED1 is P0.13 and is active-low (0 = ON, 1 = OFF).
- *
- */
-#define BOARD_LED1_PORT        NRF_P0
-#define BOARD_LED1_PIN         13
-#define BOARD_LED1_ACTIVE_LOW  1
+#define REG32(addr) (*(volatile uint32_t*)(addr))
 
-/* Helper macros so code reads clearly */
-#define BOARD_PIN_MASK(pin)    (1UL << (pin))
+// working with just one gpio port for now
+#define GPIO_PORT NRF_P0
+#define GPIO_CNF(pin) REG32(GPIO_PORT->PIN_CNF[pin])
+#define GPIO_OUTSET REG32(GPIO_PORT + GPIO_PORT->OUTSET)
+#define GPIO_OUTCLR REG32(GPIO_PORT + GPIO_PORT->OUTCLR)
 
-/* LED ON/OFF helpers (write-through, no branching in user code) */
-static inline void board_led1_init(void)
-{
-    /* Configure as output */
-    BOARD_LED1_PORT->DIRSET = BOARD_PIN_MASK(BOARD_LED1_PIN);
+// working with just one spim for now
+#define SPIM_BASE NRF_SPIM0
+#define SPIM_CONFIG REG32(SPIM_BASE + SPIM_BASE->CONFIG)
+#define SPIM_FREQUENCY REG32(SPIM_BASE + SPIM_BASE->FREQUENCY)
+#define SPIM_ENABLE REG32(SPIM_BASE + SPIM_BASE->ENABLE)
+#define SPIM_EVENTS_END REG32(SPIM_BASE + SPIM_BASE->EVENTS_END)
+#define SPIM_TXD_PTR REG32(SPIM_BASE + SPIM_BASE->TXD.PTR)
+#define SPIM_TXD_MAXCNT REG32(SPIM_BASE + SPIM_BASE->TXD.MAXCNT)
+#define SPIM_RXD_PTR REG32(SPIM_BASE + SPIM_BASE->RXD.PTR)
+#define SPIM_RXD_MAXCNT REG32(SPIM_BASE + SPIM_BASE->RXD.MAXCNT)
+#define SPIM_TASKS_START REG32(SPIM_BASE + SPIM_BASE->TASKS_START)
 
-    /* Default OFF */
-#if BOARD_LED1_ACTIVE_LOW
-    BOARD_LED1_PORT->OUTSET = BOARD_PIN_MASK(BOARD_LED1_PIN);
-#else
-    BOARD_LED1_PORT->OUTCLR = BOARD_PIN_MASK(BOARD_LED1_PIN);
-#endif
-}
+#define SPIM_PSEL_SCK REG32(SPIM_BASE + SPIM_BASE->PSEL.SCK)
+#define SPIM_PSEL_MOSI REG32(SPIM_BASE + SPIM_BASE->PSEL.MOSI)
+#define SPIM_PSEL_MISO REG32(SPIM_BASE + SPIM_BASE->PSEL.MISO)
 
-static inline void board_led1_on(void)
-{
-#if BOARD_LED1_ACTIVE_LOW
-    BOARD_LED1_PORT->OUTCLR = BOARD_PIN_MASK(BOARD_LED1_PIN);
-#else
-    BOARD_LED1_PORT->OUTSET = BOARD_PIN_MASK(BOARD_LED1_PIN);
-#endif
-}
+// Note: These pins work well with the nRF52840-DK
+// I have found that many other P0 pins either:
+// - are connected to on-board peripherals (LEDs, buttons, NFC, crystals),
+// - are routed through level-shifters or jumpers,
+// - or show signal integrity issues on long jumper wires.
+//
+// P0.02, P0.26, P0.27, and P0.30 are free, directly routed GPIOs on the DK
+// and produce clean SPI waveforms on a logic analyzer.
 
-static inline void board_led1_off(void)
-{
-#if BOARD_LED1_ACTIVE_LOW
-    BOARD_LED1_PORT->OUTSET = BOARD_PIN_MASK(BOARD_LED1_PIN);
-#else
-    BOARD_LED1_PORT->OUTCLR = BOARD_PIN_MASK(BOARD_LED1_PIN);
-#endif
-}
-
-static inline void board_led1_toggle(void)
-{
-    BOARD_LED1_PORT->OUT ^= BOARD_PIN_MASK(BOARD_LED1_PIN);
-}
+#define SCK_PIN 2
+#define MOSI_PIN 27
+#define MISO_PIN 30
 
