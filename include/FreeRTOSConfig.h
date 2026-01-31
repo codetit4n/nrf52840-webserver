@@ -22,11 +22,15 @@
  * Task and memory configuration
  *----------------------------------------------------------*/
 
+
 /* Max number of priorities (0 .. 2) */
 #define configMAX_PRIORITIES            ( 3 )
 
 /* Stack sizes are in WORDS (not bytes) */
 #define configMINIMAL_STACK_SIZE        ( 128 )
+
+/* REQUIRED on Cortex-M4F */
+#define configBYTE_ALIGNMENT 8
 
 /* Heap used by heap_4.c */
 #define configTOTAL_HEAP_SIZE           ( 32 * 1024 )

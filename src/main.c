@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-static uint8_t tx_buf[] = {0x00, 0x39, 0x00, 0x00}; // Read VERSIONR register at offset 0x0039
+static uint8_t tx_buf[] = {0x00, 0x2E, 0x00, 0x00};
 static uint8_t rx_buf[sizeof(tx_buf)];
 
 static void process_rx(const uint8_t* rx_buf, size_t len) {
@@ -33,6 +33,7 @@ static void spi_task(void* arg) {
 int main(void) {
 
 	spim_init();
+	spi_device_init_cs(CSN_PIN);
 
 	BaseType_t ok = xTaskCreate(spi_task, /* Task function */
 		"SPI",			      /* Name (for debug) */
