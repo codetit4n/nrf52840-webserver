@@ -10,9 +10,10 @@
 static uint8_t tx_buf[] = {0x00, 0x2E, 0x00, 0x00};
 static uint8_t rx_buf[sizeof(tx_buf)];
 
-static void process_rx(const uint8_t* rx_buf, size_t len) {
-	// const char* text = (const char*)rx_buf;
-	// uarte_write(text, len);
+static void process_rx(uint8_t* rx_buf, size_t len) {
+	// char* text = (char*)rx_buf;
+
+	uarte_write((const uint8_t*)"hei!\r\n", 6);
 }
 
 #define CSN_PIN 26
@@ -28,14 +29,14 @@ static void spi_task(void* arg) {
 	}
 }
 
-static void uart_task(void* arg) {
-	(void)arg;
-
-	for (;;) {
-		uarte_write("hey!\r\n", 6);
-		vTaskDelay(pdMS_TO_TICKS(1000));
-	}
-}
+// static void uart_task(void* arg) {
+//	(void)arg;
+//
+//	for (;;) {
+//		uarte_write("hey!\r\n", 6);
+//		vTaskDelay(pdMS_TO_TICKS(1000));
+//	}
+// }
 
 int main(void) {
 
@@ -57,19 +58,19 @@ int main(void) {
 			;
 	}
 
-	ok = xTaskCreate(uart_task, /* Task function */
-		"UART",		    /* Name (for debug) */
-		256,		    /* Stack size (words, not bytes) */
-		NULL,		    /* Parameters */
-		2,		    /* Priority */
-		NULL		    /* Task handle */
-	);
+	// ok = xTaskCreate(uart_task, /* Task function */
+	//	"UART",		    /* Name (for debug) */
+	//	256,		    /* Stack size (words, not bytes) */
+	//	NULL,		    /* Parameters */
+	//	2,		    /* Priority */
+	//	NULL		    /* Task handle */
+	//);
 
-	if (ok != pdPASS) {
-		taskDISABLE_INTERRUPTS();
-		for (;;)
-			;
-	}
+	// if (ok != pdPASS) {
+	//	taskDISABLE_INTERRUPTS();
+	//	for (;;)
+	//		;
+	// }
 
 	vTaskStartScheduler();
 
