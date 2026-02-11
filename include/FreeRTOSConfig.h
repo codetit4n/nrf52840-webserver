@@ -127,4 +127,10 @@
 #define INCLUDE_xTaskGetCurrentTaskHandle 1
 #define INCLUDE_uxTaskGetStackHighWaterMark 1
 
+/*-----------------------------------------------------------
+ * Memory Allocation
+ *----------------------------------------------------------*/
+#define configSUPPORT_DYNAMIC_ALLOCATION 1
+#define configSUPPORT_STATIC_ALLOCATION 1
+
 #endif /* FREERTOS_CONFIG_H */
