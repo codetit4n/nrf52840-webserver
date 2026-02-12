@@ -1,6 +1,7 @@
 #include "FreeRTOS.h"
 #include "board.h"
 #include "drivers/spi.h"
+#include "drivers/uarte.h"
 #include "logger.h"
 #include "memutils.h"
 #include "projdefs.h"
@@ -13,7 +14,7 @@ static uint8_t rx_buf[sizeof(tx_buf)];
 
 static void process_rx(uint8_t* rx_buf, uint8_t len) {
 	log_t l = {.type = LOG_HEX, .len = len};
-	memcpy(l.payload, rx_buf, len);
+	memcpy_u8(l.payload, rx_buf, len);
 	logger_log(l);
 }
 
@@ -40,7 +41,7 @@ int main(void) {
 		"SPI",			      /* Name (for debug) */
 		256,			      /* Stack size (words, not bytes) */
 		NULL,			      /* Parameters */
-		5,			      /* Priority */
+		2,			      /* Priority */
 		NULL			      /* Task handle */
 	);
 

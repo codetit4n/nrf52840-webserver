@@ -69,14 +69,33 @@ uint8_t logger_try_pop(log_t* out) {
 	return ok;
 }
 
+static uint8_t* parse_hex(uint8_t* payload, uint8_t len) {
+	// convert raw data to 0xXX hex string to be sent over UART no \0
+	static uint8_t hex_buf[LOGGER_MAX_LOG_PAYLOAD * 2];
+	for (uint8_t i = 0; i < len; ++i) {
+		uint8_t byte = payload[i];
+		hex_buf[2 * i] = "0123456789ABCDEF"[byte >> 4];
+		hex_buf[2 * i + 1] = "0123456789ABCDEF"[byte & 0x0F];
+	}
+	return hex_buf;
+}
+
 void logger_task(void* arg) {
 	(void)arg;
 
 	for (;;) {
-		log_t to_send = {0};
-		uint8_t success = logger_try_pop(&to_send);
+		log_t log = {0};
+		uint8_t success = logger_try_pop(&log);
 		if (success) {
-			uarte_write(to_send.payload, to_send.len);
+			switch (log.type) {
+			case LOG_HEX:
+				uarte_write(parse_hex(log.payload, log.len), log.len);
+				uarte_write((uint8_t*)"\r\n", 2);
+				break;
+			case LOG_STRING:
+			default:
+				uarte_write(log.payload, log.len);
+			}
 		} else {
 			vTaskDelay(1);
 		}
