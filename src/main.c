@@ -9,12 +9,18 @@
 #include <stddef.h>
 #include <stdint.h>
 
-static uint8_t tx_buf[] = {0x00, 0x2E, 0x00, 0x00};
+static uint8_t tx_buf[] = {0x00, 0x39, 0x00, 0x00};
 static uint8_t rx_buf[sizeof(tx_buf)];
 
 static void process_rx(uint8_t* rx_buf, uint8_t len) {
-	log_t l = {.type = LOG_HEX, .len = len};
-	memcpy_u8(l.payload, rx_buf, len);
+	(void)rx_buf;
+
+	uint32_t value = len;
+
+	log_t l = {.type = LOG_UINT, .len = sizeof(uint32_t)};
+
+	memcpy_u8(l.payload, (const uint8_t*)&value, sizeof(value));
+
 	logger_log(l);
 }
 

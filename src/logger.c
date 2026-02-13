@@ -2,6 +2,7 @@
 #include "FreeRTOS.h"
 #include "board.h"
 #include "drivers/uarte.h"
+#include "memutils.h"
 #include "portmacro.h"
 #include "semphr.h"
 #include <stddef.h>
@@ -69,15 +70,33 @@ uint8_t logger_try_pop(log_t* out) {
 	return ok;
 }
 
-static uint8_t* parse_hex(uint8_t* payload, uint8_t len) {
-	// convert raw data to 0xXX hex string to be sent over UART no \0
-	static uint8_t hex_buf[LOGGER_MAX_LOG_PAYLOAD * 2];
-	for (uint8_t i = 0; i < len; ++i) {
-		uint8_t byte = payload[i];
-		hex_buf[2 * i] = "0123456789ABCDEF"[byte >> 4];
-		hex_buf[2 * i + 1] = "0123456789ABCDEF"[byte & 0x0F];
+static uint8_t parse_uint(uint32_t value, uint8_t* out) {
+
+	uint8_t tmp[10];
+	uint8_t n = 0;
+
+	if (out == NULL)
+		return 0;
+
+	// special case
+	if (value == 0) {
+		out[0] = (uint8_t)'0';
+		return 1;
 	}
-	return hex_buf;
+
+	// Digits in reverse
+	while (value != 0 && n < sizeof(tmp)) {
+		uint32_t digit = value % 10u;
+		tmp[n++] = (uint8_t)('0' + digit);
+		value /= 10u;
+	}
+
+	// Reverse
+	for (uint8_t i = 0; i < n; i++) {
+		out[i] = tmp[n - 1 - i];
+	}
+
+	return n; // actual length
 }
 
 void logger_task(void* arg) {
@@ -88,14 +107,24 @@ void logger_task(void* arg) {
 		uint8_t success = logger_try_pop(&log);
 		if (success) {
 			switch (log.type) {
+			case LOG_UINT: {
+				uint32_t v = 0;
+				memcpy_u8((uint8_t*)&v, (const uint8_t*)log.payload, sizeof(v));
+
+				uint8_t out[10]; // max uint32_t is 10 digits
+				uint8_t out_len = parse_uint(v, out);
+
+				uarte_write(out, out_len);
+				break;
+			}
 			case LOG_HEX:
-				uarte_write(parse_hex(log.payload, log.len), log.len);
-				uarte_write((uint8_t*)"\r\n", 2);
+				// uarte_write(parse_hex(log.payload, log.len), log.len);
 				break;
 			case LOG_STRING:
 			default:
 				uarte_write(log.payload, log.len);
 			}
+			uarte_write((uint8_t*)"\r\n", 2);
 		} else {
 			vTaskDelay(1);
 		}
