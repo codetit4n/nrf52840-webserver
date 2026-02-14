@@ -70,7 +70,8 @@ uint8_t logger_try_pop(log_t* out) {
 	return ok;
 }
 
-static uint8_t parse_uint(uint32_t value, uint8_t* out) {
+// Converts uint32_t to ascii decimals, returns length.
+static uint8_t format_u32(uint32_t value, uint8_t* out) {
 
 	uint8_t tmp[10];
 	uint8_t n = 0;
@@ -84,19 +85,52 @@ static uint8_t parse_uint(uint32_t value, uint8_t* out) {
 		return 1;
 	}
 
-	// Digits in reverse
+	// Extract digits in reverse order
 	while (value != 0 && n < sizeof(tmp)) {
 		uint32_t digit = value % 10u;
 		tmp[n++] = (uint8_t)('0' + digit);
 		value /= 10u;
 	}
 
-	// Reverse
+	// Reverse to get correct order
 	for (uint8_t i = 0; i < n; i++) {
 		out[i] = tmp[n - 1 - i];
 	}
 
 	return n; // actual length
+}
+
+// Converts byte array to ascii hex, returns length.
+static uint8_t format_hex_bytes(const uint8_t* in, size_t in_len, uint8_t* out) {
+	if (in == NULL || out == NULL) {
+		return 0;
+	}
+
+	for (size_t i = 0; i < in_len; i++) {
+		uint8_t b = in[i];
+
+		uint8_t high = b >> 4;
+		uint8_t low = b & 0x0F;
+
+		out[2 * i] = (high < 10) ? (uint8_t)('0' + high) : (uint8_t)('A' + (high - 10));
+		out[2 * i + 1] = (low < 10) ? (uint8_t)('0' + low) : (uint8_t)('A' + (low - 10));
+	}
+
+	return (uint8_t)(2u * in_len);
+}
+
+static void fill_label(const uint8_t* label, log_t* log) {
+	for (uint8_t i = 0; i < LOGGER_MAX_LOG_LABEL; i++) {
+		if (label[i] != '\0') {
+			log->label[i] = (uint8_t)label[i];
+		} else {
+			// pad remaining with spaces
+			for (; i < LOGGER_MAX_LOG_LABEL; i++) {
+				log->label[i] = ' ';
+			}
+			break;
+		}
+	}
 }
 
 void logger_task(void* arg) {
@@ -106,20 +140,29 @@ void logger_task(void* arg) {
 		log_t log = {0};
 		uint8_t success = logger_try_pop(&log);
 		if (success) {
+
+			fill_label(log.label, &log);
+			uarte_write(log.label, LOGGER_MAX_LOG_LABEL);
+
 			switch (log.type) {
 			case LOG_UINT: {
-				uint32_t v = 0;
-				memcpy_u8((uint8_t*)&v, (const uint8_t*)log.payload, sizeof(v));
+				uint32_t u32 = 0;
+				memcpy_u8((uint8_t*)&u32, (const uint8_t*)log.payload, sizeof(u32));
 
 				uint8_t out[10]; // max uint32_t is 10 digits
-				uint8_t out_len = parse_uint(v, out);
+				uint8_t out_len = format_u32(u32, out);
 
 				uarte_write(out, out_len);
 				break;
 			}
-			case LOG_HEX:
-				// uarte_write(parse_hex(log.payload, log.len), log.len);
+			case LOG_HEX: {
+				uint8_t out[2 * LOGGER_MAX_LOG_PAYLOAD]; // each byte -> 2 hex chars
+				uint8_t out_len =
+					format_hex_bytes((const uint8_t*)log.payload, log.len, out);
+
+				uarte_write(out, out_len);
 				break;
+			}
 			case LOG_STRING:
 			default:
 				uarte_write(log.payload, log.len);

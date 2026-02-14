@@ -5,6 +5,7 @@
 
 #define LOGGER_MAX_LOG_PAYLOAD 64
 #define LOGGER_QUEUE_CAP 64
+#define LOGGER_MAX_LOG_LABEL 16
 
 typedef enum {
 	LOG_HEX,
@@ -14,6 +15,7 @@ typedef enum {
 
 typedef struct {
 	payload_t type;
+	uint8_t label[LOGGER_MAX_LOG_LABEL];
 	uint8_t payload[LOGGER_MAX_LOG_PAYLOAD];
 	uint8_t len;
 } log_t;

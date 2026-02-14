@@ -9,19 +9,23 @@
 #include <stddef.h>
 #include <stdint.h>
 
-static uint8_t tx_buf[] = {0x00, 0x39, 0x00, 0x00};
+static uint8_t tx_buf[] = {0x00, 0x2E, 0x00, 0x00};
 static uint8_t rx_buf[sizeof(tx_buf)];
 
 static void process_rx(uint8_t* rx_buf, uint8_t len) {
-	(void)rx_buf;
+	if (rx_buf == NULL || len == 0) {
+		return;
+	}
 
 	uint32_t value = len;
 
-	log_t l = {.type = LOG_UINT, .len = sizeof(uint32_t)};
+	log_t l1 = {.type = LOG_UINT, .label = "RX BUF LEN:", .len = sizeof(uint32_t)};
+	memcpy_u8(l1.payload, (const uint8_t*)&value, sizeof(value));
+	logger_log(l1);
 
-	memcpy_u8(l.payload, (const uint8_t*)&value, sizeof(value));
-
-	logger_log(l);
+	log_t l2 = {.type = LOG_HEX, .label = "RX PAYLOAD:", .len = len};
+	memcpy_u8((uint8_t*)l2.payload, (const uint8_t*)rx_buf, len);
+	logger_log(l2);
 }
 
 #define CSN_PIN 26
