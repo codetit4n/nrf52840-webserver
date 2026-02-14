@@ -1,5 +1,10 @@
 # nRF52840 web server
 
-TODOs for later:
+Improvements/TODOs for later:
 
-1. fix frequency arg in spi driver
+- spi
+  - fix frequency selector arg
+
+- logger:
+  - impl isr logging fns
+  - block indefinitely until a producer wakes the logger - task notification

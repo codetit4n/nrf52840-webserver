@@ -7,15 +7,13 @@
 #include "task.h"
 #include <stdint.h>
 
-#define UART_TX_BUF_SIZE 256
-
 // Static - RAM allocation, no dynamic memory management needed
 static uint8_t tx_buf[UART_TX_BUF_SIZE];
-static SemaphoreHandle_t uarte_mutex;
+static SemaphoreHandle_t uarte_mutex = NULL;
 
 static TickType_t tx_timeout_ticks(size_t bytes) {
 	// UART parameters
-	const uint32_t baud = 115200;
+	const uint32_t baud = 1000000;
 	const uint32_t bits_per_byte = 10;
 
 	// Convert wire time to milliseconds (ceil division)
@@ -82,7 +80,7 @@ void uarte_init(void) {
 			   (0x0 << 1) | // PARITY excluded
 			   (0 << 4);	// 1 stop bit
 
-	UARTE_BAUDRATE_REG = 0x01D60000; // 115200 (per datasheet table)
+	UARTE_BAUDRATE_REG = 0x10000000; // 1Mega baud
 
 	UARTE_EVENTS_ENDTX_REG = 0;
 	UARTE_EVENTS_TXSTOPPED_REG = 0;
