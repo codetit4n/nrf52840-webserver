@@ -24,9 +24,11 @@ and for fun. Built using FreeRTOS.
 make
 # Flash the firmware to the nRF52840
 make flash
+# Or, directly use nrfjprog
+nrfjprog --program build/webserver.elf --chiperase --verify --reset
 # Clean the build artifacts
 make clean
-# Monitor the serial output from the nRF52840 for debugging
+# Monitor the serial output from the nRF52840 for debugging - 1M baud rate
 minicom -D /dev/ttyACM0 -b 1000000
 ```
 
