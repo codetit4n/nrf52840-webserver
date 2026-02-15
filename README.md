@@ -17,7 +17,20 @@ and for fun. Built using FreeRTOS.
 - [ ] Filesystem for SD card
 - ... and more to come
 
-#### Estimated date of completion: Early March 2026
+### Commands:
+
+```bash
+# Build the firmware - Creates the firmware binary in the build/ directory
+make
+# Flash the firmware to the nRF52840
+make flash
+# Clean the build artifacts
+make clean
+# Monitor the serial output from the nRF52840 for debugging
+minicom -D /dev/ttyACM0 -b 1000000
+```
+
+#### Estimated date of completion: Mid March 2026
 
 #### Skipped for now/TODOs for later:
 
