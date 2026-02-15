@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-static uint8_t tx_buf[] = {0x00, 0x2E, 0x00, 0x00};
+static uint8_t tx_buf[] = {0x00, 0x2E, 0x00, 0x00}; // PHYCFGR register read
 static uint8_t rx_buf[sizeof(tx_buf)];
 
 static void process_rx(uint8_t* rx_buf, uint8_t len) {
@@ -23,8 +23,10 @@ static void process_rx(uint8_t* rx_buf, uint8_t len) {
 	memcpy_u8(l1.payload, (const uint8_t*)&value, sizeof(value));
 	logger_log(l1);
 
-	log_t l2 = {.type = LOG_HEX, .label = "RX PAYLOAD:", .len = len};
-	memcpy_u8((uint8_t*)l2.payload, (const uint8_t*)rx_buf, len);
+	log_t l2 = {.type = LOG_HEX,
+		.label = "RX DATA:",
+		.len = len - 3}; // first 3 bytes are header, skip them
+	memcpy_u8((uint8_t*)l2.payload, (const uint8_t*)&rx_buf[3], len - 3);
 	logger_log(l2);
 }
 

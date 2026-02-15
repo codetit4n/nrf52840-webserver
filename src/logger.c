@@ -9,10 +9,10 @@
 #include <stdint.h>
 
 static log_t log_q[LOGGER_QUEUE_CAP];
-static uint8_t front; // read idx
-static uint8_t rear;  // write idx
-static uint8_t ctr;   // number of valid entries (0..CAP)
-static uint8_t dropped;
+static uint8_t front;	// read idx
+static uint8_t rear;	// write idx
+static uint8_t ctr;	// number of valid entries (0..CAP)
+static uint8_t dropped; // will use later
 
 static SemaphoreHandle_t log_mutex = NULL;
 static StaticSemaphore_t log_mutex_buf;
