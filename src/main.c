@@ -1,7 +1,5 @@
 #include "FreeRTOS.h"
-#include "board.h"
 #include "drivers/spi.h"
-#include "drivers/uarte.h"
 #include "logger.h"
 #include "memutils.h"
 #include "projdefs.h"

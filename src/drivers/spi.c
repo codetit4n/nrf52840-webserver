@@ -1,5 +1,5 @@
 #include "drivers/spi.h"
-#include "FreeRTOS.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
 #include "board.h"
 #include "task.h"
 #include <stdint.h>
