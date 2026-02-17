@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-void* memcpy_u8(uint8_t* dest, const uint8_t* src, size_t n) {
+void* mem_cpy(void* dest, const void* src, size_t n) {
 	uint8_t* d = (uint8_t*)dest;
 	const uint8_t* s = (const uint8_t*)src;
 
@@ -12,7 +12,7 @@ void* memcpy_u8(uint8_t* dest, const uint8_t* src, size_t n) {
 	return dest;
 }
 
-void* memset_u8(uint8_t* s, int c, size_t n) {
+void* mem_set(void* s, int c, size_t n) {
 	uint8_t* p = (uint8_t*)s;
 
 	while (n--) {

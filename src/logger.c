@@ -2,6 +2,8 @@
 #include "FreeRTOS.h" // IWYU pragma: keep
 #include "drivers/uarte.h"
 #include "memutils.h"
+#include "portmacro.h"
+#include "projdefs.h"
 #include "task.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -12,6 +14,8 @@ static volatile uint8_t rear;	 // write idx
 static volatile uint8_t ctr;	 // number of valid entries (0..CAP)
 static volatile uint8_t dropped; // will use later
 
+static TaskHandle_t logger_task_handle = NULL;
+
 static inline uint8_t idx_next(uint8_t i) {
 	++i;
 	return (i >= LOGGER_QUEUE_CAP) ? 0 : i; // wrap around
@@ -20,16 +24,31 @@ static inline uint8_t idx_next(uint8_t i) {
 void logger_init(void) {
 	uarte_init();
 	front = rear = ctr = dropped = 0;
+
+	BaseType_t ok = xTaskCreate(logger_task, /* Task function */
+		"logger_task",			 /* Name (for debug) */
+		256,				 /* Stack size (words, not bytes) */
+		NULL,				 /* Parameters */
+		1,				 /* Priority */
+		&logger_task_handle		 /* Task handle */
+	);
+
+	if (ok != pdPASS) {
+		taskDISABLE_INTERRUPTS();
+		for (;;)
+			;
+	}
 }
 
 // Enqueue log entry: overwrite oldest when full
 void logger_log(log_t log) {
-
 	if (log.len > LOGGER_MAX_LOG_PAYLOAD) {
 		log.len = LOGGER_MAX_LOG_PAYLOAD;
 	}
+	uint8_t was_empty = 0;
 
 	taskENTER_CRITICAL();
+	was_empty = (ctr == 0);
 
 	if (ctr == LOGGER_QUEUE_CAP) {	 // full queue
 		front = idx_next(front); // drop oldest, ctr stays at CAP
@@ -42,6 +61,10 @@ void logger_log(log_t log) {
 	rear = idx_next(rear);
 
 	taskEXIT_CRITICAL();
+
+	if (was_empty && logger_task_handle != NULL) {
+		xTaskNotifyGive(logger_task_handle); // wake logger task if it was waiting for logs
+	}
 }
 
 uint8_t logger_try_pop(log_t* out) {
@@ -131,10 +154,14 @@ static void fill_label(const uint8_t* label, log_t* log) {
 void logger_task(void* arg) {
 	(void)arg;
 
+	log_t log = {0};
+
+	ulTaskNotifyTake(pdTRUE, 0); // clear
+
 	for (;;) {
-		log_t log = {0};
-		uint8_t success = logger_try_pop(&log);
-		if (success) {
+
+		// drain the queue
+		while (logger_try_pop(&log)) {
 
 			fill_label(log.label, &log);
 			uarte_write(log.label, LOGGER_MAX_LOG_LABEL);
@@ -142,7 +169,7 @@ void logger_task(void* arg) {
 			switch (log.type) {
 			case LOG_UINT: {
 				uint32_t u32 = 0;
-				memcpy_u8((uint8_t*)&u32, (const uint8_t*)log.payload, sizeof(u32));
+				mem_cpy(&u32, log.payload, sizeof(u32));
 
 				uint8_t out[10]; // max uint32_t is 10 digits
 				uint8_t out_len = format_u32(u32, out);
@@ -163,8 +190,7 @@ void logger_task(void* arg) {
 				uarte_write(log.payload, log.len);
 			}
 			uarte_write((uint8_t*)"\r\n", 2);
-		} else {
-			vTaskDelay(1);
 		}
+		ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // block - wait for new logs
 	}
 }

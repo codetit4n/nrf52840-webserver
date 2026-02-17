@@ -18,13 +18,13 @@ static void process_rx(uint8_t* rx_buf, uint8_t len) {
 	uint32_t value = len;
 
 	log_t l1 = {.type = LOG_UINT, .label = "RX BUF LEN:", .len = sizeof(uint32_t)};
-	memcpy_u8(l1.payload, (const uint8_t*)&value, sizeof(value));
+	mem_cpy(l1.payload, &value, sizeof(value));
 	logger_log(l1);
 
 	log_t l2 = {.type = LOG_HEX,
 		.label = "RX DATA:",
 		.len = len - 3}; // first 3 bytes are header, skip them
-	memcpy_u8((uint8_t*)l2.payload, (const uint8_t*)&rx_buf[3], len - 3);
+	mem_cpy(l2.payload, &rx_buf[3], len - 3);
 	logger_log(l2);
 }
 
@@ -48,25 +48,11 @@ int main(void) {
 	logger_init();
 
 	BaseType_t ok = xTaskCreate(spi_task, /* Task function */
-		"SPI",			      /* Name (for debug) */
+		"spi_task",		      /* Name (for debug) */
 		256,			      /* Stack size (words, not bytes) */
 		NULL,			      /* Parameters */
 		2,			      /* Priority */
 		NULL			      /* Task handle */
-	);
-
-	if (ok != pdPASS) {
-		taskDISABLE_INTERRUPTS();
-		for (;;)
-			;
-	}
-
-	ok = xTaskCreate(logger_task, /* Task function */
-		"LOGGER",	      /* Name (for debug) */
-		256,		      /* Stack size (words, not bytes) */
-		NULL,		      /* Parameters */
-		1,		      /* Priority */
-		NULL		      /* Task handle */
 	);
 
 	if (ok != pdPASS) {
