@@ -1,8 +1,18 @@
 #include "drivers/spi.h"
 #include "FreeRTOS.h" // IWYU pragma: keep
 #include "board.h"
+#include "logger.h"
+#include "semphr.h"
 #include "task.h"
 #include <stdint.h>
+
+static SemaphoreHandle_t spi_bus_mutex = NULL; // mutex for exclusive access to the SPI bus
+StaticSemaphore_t spi_bus_mutex_buf;
+static const spi_device_t* active_dev = NULL; // device currently active on the bus
+
+static inline uint8_t in_txn() {
+	return (active_dev != NULL);
+}
 
 static void cs_low(uint32_t pin) {
 	GPIO_OUTCLR_REG = (1u << pin);
@@ -12,7 +22,7 @@ static void cs_high(uint32_t pin) {
 	GPIO_OUTSET_REG = (1u << pin);
 }
 
-// only one spim for now
+// only one spi master for now
 void spim_init(void) {
 
 	/* ---------------- SCK pin ----------------
@@ -51,6 +61,17 @@ void spim_init(void) {
 	 * Value 7 = Enabled
 	 */
 	SPIM_ENABLE_REG = 7;
+
+	spi_bus_mutex =
+		xSemaphoreCreateMutexStatic(&spi_bus_mutex_buf); // Create mutex for SPI bus access
+	if (spi_bus_mutex == NULL) {
+		configASSERT(0);
+		for (;;)
+			;
+	}
+}
+
+void spi_device_init(const spi_device_t* dev) {
 }
 
 void spi_device_init_cs(uint32_t cs_pin) {

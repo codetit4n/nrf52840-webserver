@@ -32,8 +32,6 @@ make clean
 minicom -D /dev/ttyACM0 -b 1000000
 ```
 
-#### Estimated date of completion: Mid March 2026
-
 #### Skipped for now/TODOs for later:
 
 - SPI Driver:
@@ -41,4 +39,3 @@ minicom -D /dev/ttyACM0 -b 1000000
 - Logger module:
   - Implement ISR Logging fns
   - make `payload_t` enum `unit8_t` backed - optimization
-  - Block indefinitely until a producer wakes the logger - task notification

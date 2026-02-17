@@ -2,7 +2,6 @@
 #include "drivers/spi.h"
 #include "logger.h"
 #include "memutils.h"
-#include "projdefs.h"
 #include "task.h"
 #include <stddef.h>
 #include <stdint.h>

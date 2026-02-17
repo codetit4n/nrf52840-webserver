@@ -1,8 +1,6 @@
 #include "drivers/uarte.h"
 #include "FreeRTOS.h" // IWYU pragma: keep
 #include "board.h"
-#include "portmacro.h"
-#include "projdefs.h"
 #include "semphr.h"
 #include "task.h"
 #include <stdint.h>
