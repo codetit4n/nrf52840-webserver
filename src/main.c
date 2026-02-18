@@ -33,7 +33,7 @@ static void spi_task(void* arg) {
 	(void)arg;
 
 	for (;;) {
-		spi_transfer(CSN_PIN, SPI_MODE_0, 0x02000000UL, tx_buf, rx_buf, sizeof(tx_buf));
+		// spi_transfer(CSN_PIN, SPI_MODE_0, 0x02000000UL, tx_buf, rx_buf, sizeof(tx_buf));
 		process_rx(rx_buf, sizeof(rx_buf));
 
 		vTaskDelay(pdMS_TO_TICKS(500));
@@ -43,7 +43,7 @@ static void spi_task(void* arg) {
 int main(void) {
 
 	spim_init();
-	spi_device_init_cs(CSN_PIN);
+	// spi_device_init_cs(CSN_PIN);
 	logger_init();
 
 	BaseType_t ok = xTaskCreate(spi_task, /* Task function */

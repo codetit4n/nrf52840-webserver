@@ -15,16 +15,30 @@ typedef enum {
 	SPI_LSB_FIRST,
 } spi_bit_order_t;
 
+// as per datasheet
+typedef enum {
+	SPI_FREQ_125K = 0x02000000,
+	SPI_FREQ_250K = 0x04000000,
+	SPI_FREQ_500K = 0x08000000,
+	SPI_FREQ_1M = 0x10000000,
+	SPI_FREQ_2M = 0x20000000,
+	SPI_FREQ_4M = 0x40000000,
+	SPI_FREQ_8M = 0x80000000,
+	SPI_FREQ_16M = 0x0A000000,
+	SPI_FREQ_32M = 0x14000000
+} spi_frequency_t;
+
 typedef struct {
 	uint32_t cs_pin;
 	spi_mode_t mode;
-	uint32_t frequency_hz;
+	spi_frequency_t frequency;
 	spi_bit_order_t order;
 	uint8_t dummy_byte; // 0x00 or 0xFF, used for rx-only transactions
 } spi_device_t;
 
 void spim_init(void);
 
+// Static Hardware Setup only
 void spi_device_init(const spi_device_t* dev);
 
 // Transfers only valid b/w begin/end

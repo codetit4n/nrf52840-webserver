@@ -8,9 +8,9 @@ and for fun. Built using FreeRTOS.
 
 ### Work:
 
-- [x] SPI driver
 - [x] UARTE driver
 - [x] Logger module - Ring buffer for log messages.
+- [ ] SPI driver
 - [ ] W5500 ioLibrary port to work with SPI driver
 - [ ] Internet working over ethernet(W5500)
 - [ ] SD card reader driver
@@ -34,8 +34,6 @@ minicom -D /dev/ttyACM0 -b 1000000
 
 #### Skipped for now/TODOs for later:
 
-- SPI Driver:
-  - Fix frequency selector arg in SPI driver
 - Logger module:
   - Implement ISR Logging fns
   - make `payload_t` enum `unit8_t` backed - optimization

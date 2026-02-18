@@ -2,6 +2,8 @@
 #include "FreeRTOS.h" // IWYU pragma: keep
 #include "board.h"
 #include "logger.h"
+#include "memutils.h"
+#include "portmacro.h"
 #include "semphr.h"
 #include "task.h"
 #include <stdint.h>
@@ -57,11 +59,27 @@ void spim_init(void) {
 			     (0 << 2) | // No pull (depends on slave)
 			     (0 << 8) | (0 << 16);
 
-	/* ---------------- Enable SPIM0 ----------------
-	 * Value 7 = Enabled
+	/* --------Set registers to known state -----
 	 */
-	SPIM_ENABLE_REG = 7;
 
+	SPIM_CONFIG_REG = (0 << 0) |	 // CPHA = 0
+			  (0 << 1) |	 // CPOL = 0
+			  (0 << 2);	 // ORDER = 0 → MSB first
+	SPIM_FREQUENCY_REG = 0x10000000; // 1 MHz
+	SPIM_ORC_REG = 0xFF;		 // Clear ORC
+	// Clear events
+	SPIM_EVENTS_END_REG = 0;
+	SPIM_EVENTS_STARTED_REG = 0;
+	SPIM_EVENTS_STOPPED_REG = 0;
+
+	SPIM_TXD_PTR_REG = 0;		// Clear TXD pointer
+	SPIM_TXD_MAXCNT_REG = 0;	// Clear TXD max count
+	SPIM_RXD_PTR_REG = 0;		// Clear RXD pointer
+	SPIM_RXD_MAXCNT_REG = 0;	// Clear RXD max count
+	SPIM_SHORTS_REG = 0;		// Clear shorts
+	SPIM_INTENCLR_REG = 0xFFFFFFFF; // Disable all interrupts
+
+	// Create mutex for SPI bus access
 	spi_bus_mutex =
 		xSemaphoreCreateMutexStatic(&spi_bus_mutex_buf); // Create mutex for SPI bus access
 	if (spi_bus_mutex == NULL) {
@@ -69,90 +87,174 @@ void spim_init(void) {
 		for (;;)
 			;
 	}
+
+	/* ---------------- Enable SPIM0 ----------------
+	 * Value 7 = Enabled
+	 */
+	SPIM_ENABLE_REG = 7;
 }
 
 void spi_device_init(const spi_device_t* dev) {
-}
-
-void spi_device_init_cs(uint32_t cs_pin) {
 	// CSN: Output, Input buffer, disconnected, no pull
-	GPIO_CNF(cs_pin) = (1 << 0) | // DIR = 1 → Output
-			   (1 << 1) | // INPUT = 1 → Disconnect input buffer
-			   (0 << 2) | // PULL = 00 → Disabled
-			   (0 << 8) | // DRIVE = 000 → Standard drive (S0S1)
-			   (0 << 16); // SENSE = Disabled
-	cs_high(cs_pin);
+	GPIO_CNF(dev->cs_pin) = (1 << 0) | // DIR = 1 → Output
+				(1 << 1) | // INPUT = 1 → Disconnect input buffer
+				(0 << 2) | // PULL = 00 → Disabled
+				(0 << 8) | // DRIVE = 000 → Standard drive (S0S1)
+				(0 << 16); // SENSE = Disabled
+	cs_high(dev->cs_pin);
 }
 
-void spi_transfer(uint32_t cs_pin,
-	spi_mode_t mode,
-	uint32_t frequency_hz,
-	uint8_t* tx,
-	uint8_t* rx,
-	size_t len) {
+int spi_begin(const spi_device_t* dev) {
 
-	if (len == 0)
-		return;
+	BaseType_t ok = xSemaphoreTake(spi_bus_mutex, portMAX_DELAY);
 
-	/* ---------------- SPIM configuration ---------------- */
+	if (ok != pdTRUE) {
+		log_t l1 = {.label = "SPI CSN:", .type = LOG_UINT, .len = sizeof(uint32_t)};
+		mem_cpy(l1.payload, &dev->cs_pin, sizeof(dev->cs_pin));
+		logger_log(l1);
 
-	// Just MSB first for now
+		log_t l2 = {.label = "SPI BEGIN:",
+			.type = LOG_STRING,
+			.payload = "MUTEX TAKE FAILED",
+			.len = 17};
+		logger_log(l2);
+
+		return -1; // failed to take mutex
+	}
+
+	configASSERT(active_dev == NULL); // should never happen, but just in case
+
+	uint32_t order = 0;
+	switch (dev->order) {
+	case SPI_MSB_FIRST:
+		order = 0; // MSB first
+		break;
+
+	case SPI_LSB_FIRST:
+		order = 1; // LSB first
+		break;
+	}
+
 	uint32_t cfg = 0;
-	switch (mode) {
+	switch (dev->mode) {
 	case SPI_MODE_1:
-		cfg = (1 << 0) | // CPHA = 1
-		      (0 << 1) | // CPOL = 0
-		      (0 << 2);	 // ORDER = 0 → MSB first
+
+		cfg = (1 << 0) |    // CPHA = 1
+		      (0 << 1) |    // CPOL = 0
+		      (order << 2); // ORDER = 0 → MSB first, 1 → LSB first
 		break;
 	case SPI_MODE_2:
-		cfg = (0 << 0) | // CPHA = 0
-		      (1 << 1) | // CPOL = 1
-		      (0 << 2);	 // ORDER = 0 → MSB first
+		cfg = (0 << 0) |    // CPHA = 0
+		      (1 << 1) |    // CPOL = 1
+		      (order << 2); // ORDER = 0 → MSB first, 1 → LSB first
 		break;
 	case SPI_MODE_3:
-		cfg = (1 << 0) | // CPHA = 1
-		      (1 << 1) | // CPOL = 1
-		      (0 << 2);	 // ORDER = 0 → MSB first
+		cfg = (1 << 0) |    // CPHA = 1
+		      (1 << 1) |    // CPOL = 1
+		      (order << 2); // ORDER = 0 → MSB first, 1 → LSB first
 		break;
 	case SPI_MODE_0:
 	default:
-		cfg = (0 << 0) | // CPHA = 0
-		      (0 << 1) | // CPOL = 0
-		      (0 << 2);	 // ORDER = 0 → MSB first
+		cfg = (0 << 0) |    // CPHA = 0
+		      (0 << 1) |    // CPOL = 0
+		      (order << 2); // ORDER = 0 → MSB first, 1 → LSB first
 	}
 
 	SPIM_CONFIG_REG = cfg;
 
 	/* SPI clock */
-	SPIM_FREQUENCY_REG = frequency_hz;
+	SPIM_FREQUENCY_REG = dev->frequency;
+
+	// ORC
+	SPIM_ORC_REG = dev->dummy_byte;
 
 	// clear end event
 	SPIM_EVENTS_END_REG = 0;
 
-	// program DMA
-	SPIM_TXD_PTR_REG = (uintptr_t)tx;
-	SPIM_TXD_MAXCNT_REG = len;
+	cs_low(dev->cs_pin);
+	active_dev = dev;
 
-	SPIM_RXD_PTR_REG = (uintptr_t)rx;
-	SPIM_RXD_MAXCNT_REG = len;
+	log_t l1 = {.label = "SPI CSN:", .type = LOG_UINT, .len = sizeof(uint32_t)};
+	mem_cpy(l1.payload, &dev->cs_pin, sizeof(dev->cs_pin));
+	logger_log(l1);
 
-	// start spi txn
-	cs_low(cs_pin);
-	SPIM_TASKS_START_REG = 1;
+	log_t l2 = {.label = "SPI BEGIN:", .type = LOG_STRING, .payload = "OK", .len = 2};
+	logger_log(l2);
 
-	uint32_t guard = 1000000;
-
-	// Wait for completion
-	while (SPIM_EVENTS_END_REG == 0 && guard--) {
-		taskYIELD();
-	}
-
-	if (guard == 0) {
-		cs_high(cs_pin);
-		return;
-	}
-
-	// end transaction
-	SPIM_EVENTS_END_REG = 0;
-	cs_high(cs_pin);
+	return 0;
 }
+
+// void spi_transfer(uint32_t cs_pin,
+//	spi_mode_t mode,
+//	uint32_t frequency_hz,
+//	uint8_t* tx,
+//	uint8_t* rx,
+//
+//	size_t len) {
+//
+//	if (len == 0)
+//		return;
+//
+//	/* ---------------- SPIM configuration ---------------- */
+//
+//	// Just MSB first for now
+//	uint32_t cfg = 0;
+//	switch (mode) {
+//	case SPI_MODE_1:
+//
+//		cfg = (1 << 0) | // CPHA = 1
+//		      (0 << 1) | // CPOL = 0
+//		      (0 << 2);	 // ORDER = 0 → MSB first
+//		break;
+//	case SPI_MODE_2:
+//		cfg = (0 << 0) | // CPHA = 0
+//		      (1 << 1) | // CPOL = 1
+//		      (0 << 2);	 // ORDER = 0 → MSB first
+//		break;
+//	case SPI_MODE_3:
+//		cfg = (1 << 0) | // CPHA = 1
+//		      (1 << 1) | // CPOL = 1
+//		      (0 << 2);	 // ORDER = 0 → MSB first
+//		break;
+//	case SPI_MODE_0:
+//	default:
+//		cfg = (0 << 0) | // CPHA = 0
+//		      (0 << 1) | // CPOL = 0
+//		      (0 << 2);	 // ORDER = 0 → MSB first
+//	}
+//
+//	SPIM_CONFIG_REG = cfg;
+//
+//	/* SPI clock */
+//	SPIM_FREQUENCY_REG = frequency_hz;
+//
+//	// clear end event
+//	SPIM_EVENTS_END_REG = 0;
+//
+//	// program DMA
+//	SPIM_TXD_PTR_REG = (uintptr_t)tx;
+//	SPIM_TXD_MAXCNT_REG = len;
+//
+//	SPIM_RXD_PTR_REG = (uintptr_t)rx;
+//	SPIM_RXD_MAXCNT_REG = len;
+//
+//	// start spi txn
+//	cs_low(cs_pin);
+//	SPIM_TASKS_START_REG = 1;
+//
+//	uint32_t guard = 1000000;
+//
+//	// Wait for completion
+//	while (SPIM_EVENTS_END_REG == 0 && guard--) {
+//		taskYIELD();
+//	}
+//
+//	if (guard == 0) {
+//		cs_high(cs_pin);
+//		return;
+//	}
+//
+//	// end transaction
+//	SPIM_EVENTS_END_REG = 0;
+//	cs_high(cs_pin);
+// }
