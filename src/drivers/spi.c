@@ -3,18 +3,21 @@
 #include "board.h"
 #include "logger.h"
 #include "memutils.h"
-#include "portmacro.h"
 #include "semphr.h"
 #include "task.h"
+#include <stddef.h>
 #include <stdint.h>
+
+// from linker script
+extern uint8_t __ram_start__;
+extern uint8_t __ram_end__;
+
+static uint8_t scratch_buf[SPI_MAX_XFER];
+static uint8_t tx_staging_buf[SPI_MAX_XFER]; // only used in input tx buf is not in RAM
 
 static SemaphoreHandle_t spi_bus_mutex = NULL; // mutex for exclusive access to the SPI bus
 StaticSemaphore_t spi_bus_mutex_buf;
 static const spi_device_t* active_dev = NULL; // device currently active on the bus
-
-static inline uint8_t in_txn() {
-	return (active_dev != NULL);
-}
 
 static void cs_low(uint32_t pin) {
 	GPIO_OUTCLR_REG = (1u << pin);
@@ -122,7 +125,7 @@ int spi_begin(const spi_device_t* dev) {
 		return -1; // failed to take mutex
 	}
 
-	configASSERT(active_dev == NULL); // should never happen, but just in case
+	configASSERT(active_dev == NULL);
 
 	uint32_t order = 0;
 	switch (dev->order) {
@@ -184,77 +187,103 @@ int spi_begin(const spi_device_t* dev) {
 	return 0;
 }
 
-// void spi_transfer(uint32_t cs_pin,
-//	spi_mode_t mode,
-//	uint32_t frequency_hz,
-//	uint8_t* tx,
-//	uint8_t* rx,
-//
-//	size_t len) {
-//
-//	if (len == 0)
-//		return;
-//
-//	/* ---------------- SPIM configuration ---------------- */
-//
-//	// Just MSB first for now
-//	uint32_t cfg = 0;
-//	switch (mode) {
-//	case SPI_MODE_1:
-//
-//		cfg = (1 << 0) | // CPHA = 1
-//		      (0 << 1) | // CPOL = 0
-//		      (0 << 2);	 // ORDER = 0 → MSB first
-//		break;
-//	case SPI_MODE_2:
-//		cfg = (0 << 0) | // CPHA = 0
-//		      (1 << 1) | // CPOL = 1
-//		      (0 << 2);	 // ORDER = 0 → MSB first
-//		break;
-//	case SPI_MODE_3:
-//		cfg = (1 << 0) | // CPHA = 1
-//		      (1 << 1) | // CPOL = 1
-//		      (0 << 2);	 // ORDER = 0 → MSB first
-//		break;
-//	case SPI_MODE_0:
-//	default:
-//		cfg = (0 << 0) | // CPHA = 0
-//		      (0 << 1) | // CPOL = 0
-//		      (0 << 2);	 // ORDER = 0 → MSB first
-//	}
-//
-//	SPIM_CONFIG_REG = cfg;
-//
-//	/* SPI clock */
-//	SPIM_FREQUENCY_REG = frequency_hz;
-//
-//	// clear end event
-//	SPIM_EVENTS_END_REG = 0;
-//
-//	// program DMA
-//	SPIM_TXD_PTR_REG = (uintptr_t)tx;
-//	SPIM_TXD_MAXCNT_REG = len;
-//
-//	SPIM_RXD_PTR_REG = (uintptr_t)rx;
-//	SPIM_RXD_MAXCNT_REG = len;
-//
-//	// start spi txn
-//	cs_low(cs_pin);
-//	SPIM_TASKS_START_REG = 1;
-//
-//	uint32_t guard = 1000000;
-//
-//	// Wait for completion
-//	while (SPIM_EVENTS_END_REG == 0 && guard--) {
-//		taskYIELD();
-//	}
-//
-//	if (guard == 0) {
-//		cs_high(cs_pin);
-//		return;
-//	}
-//
-//	// end transaction
-//	SPIM_EVENTS_END_REG = 0;
-//	cs_high(cs_pin);
-// }
+static uint8_t check_buf_in_ram(const uint8_t* buf, size_t len) {
+	uintptr_t ram_lo = (uintptr_t)&__ram_start__;
+	uintptr_t ram_hi = (uintptr_t)&__ram_end__;
+
+	uintptr_t p = (uintptr_t)buf;
+	uintptr_t q = p + len;
+
+	if (q >= p && p >= ram_lo && q <= ram_hi) {
+		// buf fully inside RAM
+		return 1;
+	} else {
+		// buf not fully in RAM
+		return 0;
+	}
+}
+
+// write only
+int spi_tx(const uint8_t* tx_buf, size_t tx_len) {
+	if (active_dev == NULL) {
+
+		log_t l = {.label = "SPI TX:",
+			.type = LOG_STRING,
+			.payload = "DEV NOT SET",
+			.len = 15};
+		logger_log(l);
+
+		configASSERT(0); // Must call spi_begin() before spi_tx()
+
+		return -1; // no active device
+	}
+
+	if (tx_len == 0) {
+		log_t l = {.label = "SPI TX:",
+			.type = LOG_STRING,
+			.payload = "NO SEND DATA",
+			.len = 12};
+		logger_log(l);
+
+		return 0; // nothing to send
+	}
+
+	if (tx_len > SPI_MAX_XFER) {
+		log_t l = {.label = "SPI TX:",
+			.type = LOG_STRING,
+			.payload = "DATA LIMIT EXCEED",
+			.len = 17};
+		logger_log(l);
+
+		configASSERT(0); // Exceeds max transfer size
+
+		return -1;
+	}
+
+	if (tx_buf == NULL && tx_len > 0) {
+		log_t l = {.label = "SPI TX:",
+			.type = LOG_STRING,
+			.payload = "NULL TX BUF",
+			.len = 11};
+		logger_log(l);
+
+		configASSERT(0); // Null buffer with non-zero length
+
+		return -1;
+	}
+
+	// clear events
+	SPIM_EVENTS_END_REG = 0;
+	SPIM_EVENTS_STARTED_REG = 0;
+	SPIM_EVENTS_STOPPED_REG = 0;
+
+	// check if tx_buf is in RAM
+	if (check_buf_in_ram(tx_buf, tx_len)) {
+		SPIM_TXD_PTR_REG = (uintptr_t)tx_buf;
+		SPIM_TXD_MAXCNT_REG = tx_len;
+	} else {
+
+		mem_cpy(tx_staging_buf, tx_buf, tx_len);
+
+		SPIM_TXD_PTR_REG = (uintptr_t)tx_staging_buf;
+		SPIM_TXD_MAXCNT_REG = tx_len;
+	}
+
+	// electrically spi is full duplex
+	SPIM_RXD_PTR_REG = (uintptr_t)scratch_buf;
+	SPIM_RXD_MAXCNT_REG = tx_len;
+
+	// start tx
+	SPIM_TASKS_START_REG = 1;
+
+	uint32_t guard = 1000000;
+
+	// Wait for completion
+	while (SPIM_EVENTS_END_REG == 0 && guard--) {
+		taskYIELD();
+	}
+
+    // work in progress!
+
+	return 0;
+}

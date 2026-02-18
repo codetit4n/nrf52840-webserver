@@ -48,6 +48,8 @@ ENTRY(Reset_Handler)
 
 SECTIONS
 {
+    __ram_start__ = ORIGIN(RAM);
+    __ram_end__ = ORIGIN(RAM) + LENGTH(RAM);
     .text :
     {
         KEEP(*(.isr_vector))

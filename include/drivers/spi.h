@@ -36,6 +36,8 @@ typedef struct {
 	uint8_t dummy_byte; // 0x00 or 0xFF, used for rx-only transactions
 } spi_device_t;
 
+#define SPI_MAX_XFER 512
+
 void spim_init(void);
 
 // Static Hardware Setup only
