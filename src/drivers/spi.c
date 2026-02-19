@@ -8,12 +8,23 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// static void log_reg_u32(const char* label, uint32_t value) {
+//	logger_log_uint_len(label,
+//		(uint8_t)(sizeof("REG:") - 1), // dummy, will override below
+//		&value,
+//		(uint8_t)sizeof(value));
+// }
+
 // from linker script
 extern uint8_t __ram_start__;
 extern uint8_t __ram_end__;
 
 static uint8_t scratch_buf[SPI_MAX_XFER];
 static uint8_t tx_staging_buf[SPI_MAX_XFER]; // only used in input tx buf is not in RAM
+
+const uint8_t* spi_last_xfer_rx(void) {
+	return scratch_buf;
+}
 
 static SemaphoreHandle_t spi_bus_mutex = NULL; // mutex for exclusive access to the SPI bus
 StaticSemaphore_t spi_bus_mutex_buf;
@@ -95,6 +106,46 @@ void spim_init(void) {
 	 * Value 7 = Enabled
 	 */
 	SPIM_ENABLE_REG = 7;
+
+	{
+		uint32_t v;
+
+		v = SPIM_ENABLE_REG;
+		logger_log_uint_len("SPIM ENABLE:",
+			(uint8_t)(sizeof("SPIM ENABLE:") - 1),
+			&v,
+			(uint8_t)sizeof(v));
+
+		v = SPIM_PSEL_SCK_REG;
+		logger_log_uint_len("PSEL SCK:",
+			(uint8_t)(sizeof("PSEL SCK:") - 1),
+			&v,
+			(uint8_t)sizeof(v));
+
+		v = SPIM_PSEL_MOSI_REG;
+		logger_log_uint_len("PSEL MOSI:",
+			(uint8_t)(sizeof("PSEL MOSI:") - 1),
+			&v,
+			(uint8_t)sizeof(v));
+
+		v = SPIM_PSEL_MISO_REG;
+		logger_log_uint_len("PSEL MISO:",
+			(uint8_t)(sizeof("PSEL MISO:") - 1),
+			&v,
+			(uint8_t)sizeof(v));
+
+		v = SPIM_FREQUENCY_REG;
+		logger_log_uint_len("FREQ:",
+			(uint8_t)(sizeof("FREQ:") - 1),
+			&v,
+			(uint8_t)sizeof(v));
+
+		v = SPIM_CONFIG_REG;
+		logger_log_uint_len("CONFIG:",
+			(uint8_t)(sizeof("CONFIG:") - 1),
+			&v,
+			(uint8_t)sizeof(v));
+	}
 }
 
 void spi_device_init(const spi_device_t* dev) {
@@ -272,6 +323,40 @@ int spi_tx(const uint8_t* tx_buf, size_t tx_len) {
 	SPIM_RXD_PTR_REG = (uintptr_t)scratch_buf;
 	SPIM_RXD_MAXCNT_REG = tx_len;
 
+	{
+		uint32_t v;
+
+		v = (uint32_t)SPIM_TXD_PTR_REG;
+		logger_log_uint_len("TX PTR:",
+			(uint8_t)(sizeof("TX PTR:") - 1),
+			&v,
+			(uint8_t)sizeof(v));
+
+		v = SPIM_TXD_MAXCNT_REG;
+		logger_log_uint_len("TX MAX:",
+			(uint8_t)(sizeof("TX MAX:") - 1),
+			&v,
+			(uint8_t)sizeof(v));
+
+		v = (uint32_t)SPIM_RXD_PTR_REG;
+		logger_log_uint_len("RX PTR:",
+			(uint8_t)(sizeof("RX PTR:") - 1),
+			&v,
+			(uint8_t)sizeof(v));
+
+		v = SPIM_RXD_MAXCNT_REG;
+		logger_log_uint_len("RX MAX:",
+			(uint8_t)(sizeof("RX MAX:") - 1),
+			&v,
+			(uint8_t)sizeof(v));
+
+		v = SPIM_EVENTS_END_REG;
+		logger_log_uint_len("END pre:",
+			(uint8_t)(sizeof("END pre:") - 1),
+			&v,
+			(uint8_t)sizeof(v));
+	}
+
 	// start tx
 	SPIM_TASKS_START_REG = 1;
 
@@ -305,6 +390,24 @@ int spi_tx(const uint8_t* tx_buf, size_t tx_len) {
 
 		return -1;
 	}
+
+	{
+		uint32_t v;
+
+		v = SPIM_EVENTS_END_REG;
+		logger_log_uint_len("END post:",
+			(uint8_t)(sizeof("END post:") - 1),
+			&v,
+			(uint8_t)sizeof(v));
+
+		// If you have AMOUNT regs defined, log them too (same temp pattern).
+		// v = SPIM_TXD_AMOUNT_REG; ...
+		// v = SPIM_RXD_AMOUNT_REG; ...
+	}
+	logger_log_hex_len("SCRATCH:",
+		(uint8_t)(sizeof("SCRATCH:") - 1),
+		scratch_buf,
+		(uint8_t)tx_len);
 
 	return 0;
 }
@@ -409,5 +512,16 @@ int spi_rx(uint8_t* rx_buf, size_t rx_len) {
 		return -1;
 	}
 
+	return 0;
+}
+
+int spi_end(void) {
+	if (active_dev == NULL)
+		return -1;
+
+	cs_high(active_dev->cs_pin);
+	active_dev = NULL;
+
+	xSemaphoreGive(spi_bus_mutex);
 	return 0;
 }
