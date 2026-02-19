@@ -1,58 +1,55 @@
 #include "FreeRTOS.h"
 #include "drivers/spi.h"
 #include "logger.h"
-#include "memutils.h"
 #include "task.h"
 #include <stddef.h>
 #include <stdint.h>
 
-static uint8_t tx_buf[] = {0x00, 0x2E, 0x00, 0x00}; // PHYCFGR register read
-static uint8_t rx_buf[sizeof(tx_buf)];
-
-static void process_rx(uint8_t* rx_buf, uint8_t len) {
-	if (rx_buf == NULL || len == 0) {
-		return;
-	}
-
-	uint32_t value = len;
-
-	log_t l1 = {.type = LOG_UINT, .label = "RX BUF LEN:", .len = sizeof(uint32_t)};
-	mem_cpy(l1.payload, &value, sizeof(value));
-	logger_log(l1);
-
-	log_t l2 = {.type = LOG_HEX,
-		.label = "RX DATA:",
-		.len = len - 3}; // first 3 bytes are header, skip them
-	mem_cpy(l2.payload, &rx_buf[3], len - 3);
-	logger_log(l2);
-}
-
 #define CSN_PIN 26
+
+/* W5500 VERSIONR register address is 0x0039, expected value: 0x04 */
+static uint8_t w5500_hdr[3] = {0x00, 0x39, 0x00}; /* addr_hi, addr_lo, control */
+static uint8_t version_byte = 0;
 
 static void spi_task(void* arg) {
 	(void)arg;
 
+	/* Define W5500 device settings */
+	static const spi_device_t w5500 = {
+		.cs_pin = CSN_PIN,
+		.mode = SPI_MODE_0,
+		.frequency = SPI_FREQ_8M, /* or slower (1M/4M) if bring-up */
+		.order = SPI_MSB_FIRST,	  /* whatever your enum/defines are */
+		.dummy_byte = 0xFF	  /* for RX clocks; 0x00 is fine for W5500 */
+	};
+
+	/* IMPORTANT: no spi_end() yet, so begin ONCE */
+	spi_begin(&w5500);
+
 	for (;;) {
-		// spi_transfer(CSN_PIN, SPI_MODE_0, 0x02000000UL, tx_buf, rx_buf, sizeof(tx_buf));
-		process_rx(rx_buf, sizeof(rx_buf));
+		/* Send 3-byte read header, then clock out 1 byte via spi_rx() */
+		(void)spi_tx(w5500_hdr, sizeof(w5500_hdr));
+		(void)spi_rx(&version_byte, 1);
+
+		/* Log the single received byte as HEX */
+		logger_log_hex_len("W5500 VERSIONR:",
+			(uint8_t)(sizeof("W5500 VERSIONR:") - 1),
+			&version_byte,
+			1);
+
+		/* Optional: also log as UINT (still raw bytes, your logger prints it as decimal) */
+		/* logger_log_uint_len("W5500 VERSIONR(U):", (uint8_t)(sizeof("W5500 VERSIONR(U):")
+		   - 1), &version_byte, (uint8_t)sizeof(version_byte)); */
 
 		vTaskDelay(pdMS_TO_TICKS(500));
 	}
 }
 
 int main(void) {
-
 	spim_init();
-	// spi_device_init_cs(CSN_PIN);
 	logger_init();
 
-	BaseType_t ok = xTaskCreate(spi_task, /* Task function */
-		"spi_task",		      /* Name (for debug) */
-		256,			      /* Stack size (words, not bytes) */
-		NULL,			      /* Parameters */
-		2,			      /* Priority */
-		NULL			      /* Task handle */
-	);
+	BaseType_t ok = xTaskCreate(spi_task, "spi_task", 256, NULL, 2, NULL);
 
 	if (ok != pdPASS) {
 		taskDISABLE_INTERRUPTS();
@@ -62,7 +59,6 @@ int main(void) {
 
 	vTaskStartScheduler();
 
-	/* Should never reach here */
 	taskDISABLE_INTERRUPTS();
 	for (;;)
 		;

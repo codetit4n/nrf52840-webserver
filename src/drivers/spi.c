@@ -112,15 +112,15 @@ int spi_begin(const spi_device_t* dev) {
 	BaseType_t ok = xSemaphoreTake(spi_bus_mutex, portMAX_DELAY);
 
 	if (ok != pdTRUE) {
-		log_t l1 = {.label = "SPI CSN:", .type = LOG_UINT, .len = sizeof(uint32_t)};
-		mem_cpy(l1.payload, &dev->cs_pin, sizeof(dev->cs_pin));
-		logger_log(l1);
+		logger_log_uint_len("SPI CSN:",
+			(uint8_t)(sizeof("SPI CSN:") - 1),
+			&dev->cs_pin,
+			(uint8_t)sizeof(dev->cs_pin));
 
-		log_t l2 = {.label = "SPI BEGIN:",
-			.type = LOG_STRING,
-			.payload = "MUTEX TAKE FAILED",
-			.len = 17};
-		logger_log(l2);
+		logger_log_literal_len("SPI BEGIN:",
+			(uint8_t)(sizeof("SPI BEGIN:") - 1),
+			"MUTEX TAKE FAILED",
+			(uint8_t)(sizeof("MUTEX TAKE FAILED") - 1));
 
 		return -1; // failed to take mutex
 	}
@@ -177,12 +177,15 @@ int spi_begin(const spi_device_t* dev) {
 	cs_low(dev->cs_pin);
 	active_dev = dev;
 
-	log_t l1 = {.label = "SPI CSN:", .type = LOG_UINT, .len = sizeof(uint32_t)};
-	mem_cpy(l1.payload, &dev->cs_pin, sizeof(dev->cs_pin));
-	logger_log(l1);
+	logger_log_uint_len("SPI CSN:",
+		(uint8_t)(sizeof("SPI CSN:") - 1),
+		&dev->cs_pin,
+		(uint8_t)sizeof(dev->cs_pin));
 
-	log_t l2 = {.label = "SPI BEGIN:", .type = LOG_STRING, .payload = "OK", .len = 2};
-	logger_log(l2);
+	logger_log_literal_len("SPI BEGIN:",
+		(uint8_t)(sizeof("SPI BEGIN:") - 1),
+		"OK",
+		(uint8_t)(sizeof("OK") - 1));
 
 	return 0;
 }
@@ -207,11 +210,10 @@ static uint8_t check_buf_in_ram(const uint8_t* buf, size_t len) {
 int spi_tx(const uint8_t* tx_buf, size_t tx_len) {
 	if (active_dev == NULL) {
 
-		log_t l = {.label = "SPI TX:",
-			.type = LOG_STRING,
-			.payload = "DEV NOT SET",
-			.len = 15};
-		logger_log(l);
+		logger_log_literal_len("SPI TX:",
+			(uint8_t)(sizeof("SPI TX:") - 1),
+			"DEV NOT SET",
+			(uint8_t)(sizeof("DEV NOT SET") - 1));
 
 		configASSERT(0); // Must call spi_begin() before spi_tx()
 
@@ -219,21 +221,19 @@ int spi_tx(const uint8_t* tx_buf, size_t tx_len) {
 	}
 
 	if (tx_len == 0) {
-		log_t l = {.label = "SPI TX:",
-			.type = LOG_STRING,
-			.payload = "NO SEND DATA",
-			.len = 12};
-		logger_log(l);
+		logger_log_literal_len("SPI TX:",
+			(uint8_t)(sizeof("SPI TX:") - 1),
+			"NO SEND DATA",
+			(uint8_t)(sizeof("NO SEND DATA") - 1));
 
-		return 0; // nothing to send
+		return -1; // nothing to send
 	}
 
 	if (tx_len > SPI_MAX_XFER) {
-		log_t l = {.label = "SPI TX:",
-			.type = LOG_STRING,
-			.payload = "DATA LIMIT EXCEED",
-			.len = 17};
-		logger_log(l);
+		logger_log_literal_len("SPI TX:",
+			(uint8_t)(sizeof("SPI TX:") - 1),
+			"DATA LIMIT EXCEED",
+			(uint8_t)(sizeof("DATA LIMIT EXCEED") - 1));
 
 		configASSERT(0); // Exceeds max transfer size
 
@@ -241,11 +241,10 @@ int spi_tx(const uint8_t* tx_buf, size_t tx_len) {
 	}
 
 	if (tx_buf == NULL && tx_len > 0) {
-		log_t l = {.label = "SPI TX:",
-			.type = LOG_STRING,
-			.payload = "NULL TX BUF",
-			.len = 11};
-		logger_log(l);
+		logger_log_literal_len("SPI TX:",
+			(uint8_t)(sizeof("SPI TX:") - 1),
+			"NULL TX BUF",
+			(uint8_t)(sizeof("NULL TX BUF") - 1));
 
 		configASSERT(0); // Null buffer with non-zero length
 
@@ -276,14 +275,139 @@ int spi_tx(const uint8_t* tx_buf, size_t tx_len) {
 	// start tx
 	SPIM_TASKS_START_REG = 1;
 
-	uint32_t guard = 1000000;
+	TickType_t start_tick = xTaskGetTickCount();
 
 	// Wait for completion
-	while (SPIM_EVENTS_END_REG == 0 && guard--) {
-		taskYIELD();
+	while (SPIM_EVENTS_END_REG == 0 && (xTaskGetTickCount() - start_tick) < SPI_TIMEOUT_TICKS) {
+		vTaskDelay(1);
 	}
 
-    // work in progress!
+	if (SPIM_EVENTS_END_REG == 0) {
+		// timeout occurred
+		SPIM_TASKS_STOP_REG = 1;
+
+		// Wait for STOPPED
+		TickType_t stop_start = xTaskGetTickCount();
+		while (SPIM_EVENTS_STOPPED_REG == 0 &&
+			(xTaskGetTickCount() - stop_start) < pdMS_TO_TICKS(5)) {
+			vTaskDelay(1);
+		}
+
+		// Clean up
+		SPIM_EVENTS_END_REG = 0;
+		SPIM_EVENTS_STOPPED_REG = 0;
+		SPIM_EVENTS_STARTED_REG = 0;
+
+		logger_log_literal_len("SPI TX:",
+			(uint8_t)(sizeof("SPI TX:") - 1),
+			"TIMEOUT",
+			(uint8_t)(sizeof("TIMEOUT") - 1));
+
+		return -1;
+	}
+
+	return 0;
+}
+
+// read only
+int spi_rx(uint8_t* rx_buf, size_t rx_len) {
+	if (active_dev == NULL) {
+
+		logger_log_literal_len("SPI RX:",
+			(uint8_t)(sizeof("SPI RX:") - 1),
+			"DEV NOT SET",
+			(uint8_t)(sizeof("DEV NOT SET") - 1));
+
+		configASSERT(0); // Must call spi_begin() before spi_rx()
+
+		return -1; // no active device
+	}
+
+	if (rx_len == 0) {
+		logger_log_literal_len("SPI RX:",
+			(uint8_t)(sizeof("SPI RX:") - 1),
+			"NO RECEIVE DATA",
+			(uint8_t)(sizeof("NO RECEIVE DATA") - 1));
+
+		return -1; // nothing to receive
+	}
+
+	if (rx_len > SPI_MAX_XFER) {
+		logger_log_literal_len("SPI RX:",
+			(uint8_t)(sizeof("SPI RX:") - 1),
+			"DATA LIMIT EXCEED",
+			(uint8_t)(sizeof("DATA LIMIT EXCEED") - 1));
+
+		configASSERT(0); // Exceeds max transfer size
+
+		return -1;
+	}
+
+	if (rx_buf == NULL && rx_len > 0) {
+		logger_log_literal_len("SPI RX:",
+			(uint8_t)(sizeof("SPI RX:") - 1),
+			"NULL RX BUF",
+			(uint8_t)(sizeof("NULL RX BUF") - 1));
+
+		configASSERT(0); // Null buffer with non-zero length
+
+		return -1;
+	}
+
+	// clear events
+	SPIM_EVENTS_END_REG = 0;
+	SPIM_EVENTS_STARTED_REG = 0;
+	SPIM_EVENTS_STOPPED_REG = 0;
+
+	SPIM_TXD_PTR_REG = 0;
+	SPIM_TXD_MAXCNT_REG = 0;
+	// check if rx_buf is in RAM
+	if (!check_buf_in_ram(rx_buf, rx_len)) {
+		logger_log_literal_len("SPI RX:",
+			(uint8_t)(sizeof("SPI RX:") - 1),
+			"RX BUF NOT IN RAM",
+			(uint8_t)(sizeof("RX BUF NOT IN RAM") - 1));
+
+		configASSERT(0); // RX buffer must be in RAM for DMA
+
+		return -1;
+	}
+	SPIM_RXD_PTR_REG = (uintptr_t)rx_buf;
+	SPIM_RXD_MAXCNT_REG = rx_len;
+
+	// start tx
+	SPIM_TASKS_START_REG = 1;
+
+	TickType_t start_tick = xTaskGetTickCount();
+
+	// Wait for completion
+	while (SPIM_EVENTS_END_REG == 0 && (xTaskGetTickCount() - start_tick) < SPI_TIMEOUT_TICKS) {
+		vTaskDelay(1);
+	}
+
+	if (SPIM_EVENTS_END_REG == 0) {
+		// timeout occurred
+		SPIM_TASKS_STOP_REG = 1;
+
+		// Wait for STOPPED
+		TickType_t stop_start = xTaskGetTickCount();
+		while (SPIM_EVENTS_STOPPED_REG == 0 &&
+			(xTaskGetTickCount() - stop_start) < pdMS_TO_TICKS(5)) {
+			vTaskDelay(1);
+		}
+
+		// Clean up
+		SPIM_EVENTS_END_REG = 0;
+		SPIM_EVENTS_STOPPED_REG = 0;
+		SPIM_EVENTS_STARTED_REG = 0;
+
+		logger_log_literal_len("SPI RX:",
+			(uint8_t)(sizeof("SPI RX:") - 1),
+			"TIMEOUT",
+			(uint8_t)(sizeof("TIMEOUT") - 1));
+
+		return -1;
+	}
 
 	return 0;
 }

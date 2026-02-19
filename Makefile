@@ -25,7 +25,7 @@ PLATFORM := platform/nrf52840
 # -------------------------------------------------
 CFLAGS  := -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
 CFLAGS  += -O2 -g3 -ffunction-sections -fdata-sections
-CFLAGS  += -Wall -Wextra
+CFLAGS  += -Wall -Wextra -Werror -Wmissing-field-initializers -Wpedantic
 
 # -------------------------------------------------
 # Startup overrides

@@ -192,3 +192,81 @@ void logger_task(void* arg) {
 		ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // block - wait for new logs
 	}
 }
+
+void logger_log_literal_len(const char* label,
+	uint8_t label_len,
+	const char* text,
+	uint8_t text_len) {
+	log_t l = {0};
+	l.type = LOG_STRING;
+
+	if (label_len > LOGGER_MAX_LOG_LABEL)
+		label_len = LOGGER_MAX_LOG_LABEL;
+
+	if (text_len > LOGGER_MAX_LOG_PAYLOAD)
+		text_len = LOGGER_MAX_LOG_PAYLOAD;
+
+	if (label && label_len)
+		mem_cpy(l.label, label, label_len);
+
+	if (text && text_len) {
+		mem_cpy(l.payload, text, text_len);
+		l.len = text_len;
+	} else {
+		l.len = 0;
+	}
+
+	logger_log(l);
+}
+
+void logger_log_uint_len(const char* label,
+	uint8_t label_len,
+	const void* value,
+	uint8_t value_len) {
+	log_t l = {0};
+	l.type = LOG_UINT;
+
+	if (label_len > LOGGER_MAX_LOG_LABEL)
+		label_len = LOGGER_MAX_LOG_LABEL;
+
+	if (value_len > LOGGER_MAX_LOG_PAYLOAD)
+		value_len = LOGGER_MAX_LOG_PAYLOAD;
+
+	if (label && label_len)
+		mem_cpy(l.label, label, label_len);
+
+	if (value && value_len) {
+		mem_cpy(l.payload, value, value_len);
+		l.len = value_len;
+	} else {
+		l.len = 0;
+	}
+
+	logger_log(l);
+}
+
+void logger_log_hex_len(const char* label,
+	uint8_t label_len,
+	const uint8_t* data,
+	uint8_t data_len) {
+	log_t l = {0};
+	l.type = LOG_HEX;
+
+	if (label_len > LOGGER_MAX_LOG_LABEL)
+		label_len = LOGGER_MAX_LOG_LABEL;
+
+	if (data_len > LOGGER_MAX_LOG_PAYLOAD)
+		data_len = LOGGER_MAX_LOG_PAYLOAD;
+
+	if (label && label_len)
+		mem_cpy(l.label, label, label_len);
+
+	if (data && data_len) {
+		mem_cpy(l.payload, data, data_len);
+		l.len = data_len;
+	} else {
+		l.len = 0;
+	}
+
+	logger_log(l);
+}

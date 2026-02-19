@@ -16,17 +16,17 @@ typedef enum {
 } spi_bit_order_t;
 
 // as per datasheet
-typedef enum {
-	SPI_FREQ_125K = 0x02000000,
-	SPI_FREQ_250K = 0x04000000,
-	SPI_FREQ_500K = 0x08000000,
-	SPI_FREQ_1M = 0x10000000,
-	SPI_FREQ_2M = 0x20000000,
-	SPI_FREQ_4M = 0x40000000,
-	SPI_FREQ_8M = 0x80000000,
-	SPI_FREQ_16M = 0x0A000000,
-	SPI_FREQ_32M = 0x14000000
-} spi_frequency_t;
+typedef uint32_t spi_frequency_t;
+
+#define SPI_FREQ_125K 0x02000000u
+#define SPI_FREQ_250K 0x04000000u
+#define SPI_FREQ_500K 0x08000000u
+#define SPI_FREQ_1M 0x10000000u
+#define SPI_FREQ_2M 0x20000000u
+#define SPI_FREQ_4M 0x40000000u
+#define SPI_FREQ_8M 0x80000000u
+#define SPI_FREQ_16M 0x0A000000u
+#define SPI_FREQ_32M 0x14000000u
 
 typedef struct {
 	uint32_t cs_pin;
@@ -37,6 +37,7 @@ typedef struct {
 } spi_device_t;
 
 #define SPI_MAX_XFER 512
+#define SPI_TIMEOUT_TICKS pdMS_TO_TICKS(50) // for v1 only
 
 void spim_init(void);
 
