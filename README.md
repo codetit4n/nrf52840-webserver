@@ -10,7 +10,7 @@ and for fun. Built using FreeRTOS.
 
 - [x] UARTE driver
 - [x] Logger module - Ring buffer for log messages.
-- [ ] SPI driver
+- [x] SPI driver
 - [ ] W5500 ioLibrary port to work with SPI driver
 - [ ] Internet working over ethernet(W5500)
 - [ ] SD card reader driver
