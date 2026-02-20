@@ -317,8 +317,13 @@ int spi_rx(uint8_t* rx_buf, size_t rx_len) {
 	SPIM_EVENTS_STARTED_REG = 0;
 	SPIM_EVENTS_STOPPED_REG = 0;
 
-	SPIM_TXD_PTR_REG = 0;
-	SPIM_TXD_MAXCNT_REG = 0;
+	size_t i = 0;
+	while (i < rx_len) {
+		scratch_buf[i++] = active_dev->dummy_byte;
+	}
+
+	SPIM_TXD_PTR_REG = (uintptr_t)scratch_buf;
+	SPIM_TXD_MAXCNT_REG = rx_len;
 
 	SPIM_RXD_PTR_REG = (uintptr_t)rx_buf;
 	SPIM_RXD_MAXCNT_REG = rx_len;
