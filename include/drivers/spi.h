@@ -55,7 +55,3 @@ int spi_rx(uint8_t* rx_buf,
 int spi_txrx(const uint8_t* tx_buf, uint8_t* rx_buf, size_t len); // full duplex
 
 // must call spi_end() after calling any functions above
-
-// debugging
-
-const uint8_t* spi_last_xfer_rx(void);
