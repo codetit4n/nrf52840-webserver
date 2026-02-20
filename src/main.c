@@ -2,8 +2,6 @@
 #include "drivers/spi.h"
 #include "logger.h"
 #include "task.h"
-#include <stddef.h>
-#include <stdint.h>
 
 #define CSN_PIN 26
 
@@ -62,4 +60,6 @@ int main(void) {
 	taskDISABLE_INTERRUPTS();
 	for (;;)
 		;
+
+	return 0;
 }

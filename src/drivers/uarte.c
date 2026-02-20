@@ -2,8 +2,6 @@
 #include "FreeRTOS.h" // IWYU pragma: keep
 #include "board.h"
 #include "semphr.h"
-#include "task.h"
-#include <stdint.h>
 
 // Static - RAM allocation, no dynamic memory management needed
 static uint8_t tx_buf[UART_TX_BUF_SIZE];

@@ -1,12 +1,9 @@
 #include "drivers/spi.h"
-#include "FreeRTOS.h" // IWYU pragma: keep
+#include "FreeRTOS.h"
 #include "board.h"
 #include "logger.h"
 #include "memutils.h"
 #include "semphr.h"
-#include "task.h"
-#include <stddef.h>
-#include <stdint.h>
 
 // from linker script
 extern uint8_t __ram_start__;
@@ -145,7 +142,6 @@ int spi_begin(const spi_device_t* dev) {
 	SPIM_FREQUENCY_REG = dev->frequency;
 	SPIM_ORC_REG = dev->dummy_byte;
 
-	// Optional consistency: clear all relevant events on begin.
 	SPIM_EVENTS_END_REG = 0;
 	SPIM_EVENTS_STARTED_REG = 0;
 	SPIM_EVENTS_STOPPED_REG = 0;

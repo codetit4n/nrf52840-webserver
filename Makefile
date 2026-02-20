@@ -17,7 +17,7 @@ SIZE    := arm-none-eabi-size
 FREERTOS := freertos/FreeRTOS-Kernel
 NRFX_MDK := third_party/nrfx/mdk
 CMSIS    := third_party/cmsis/include
-WIZNET   := third_party/Wiznet_W5500
+W5500    := third_party/Wiznet_W5500
 PLATFORM := platform/nrf52840
 
 # -------------------------------------------------
@@ -42,7 +42,7 @@ CFLAGS  += -I$(FREERTOS)/include
 CFLAGS  += -I$(FREERTOS)/portable/GCC/ARM_CM4F
 CFLAGS  += -I$(NRFX_MDK)
 CFLAGS  += -I$(CMSIS)
-CFLAGS  += -I$(WIZNET)
+CFLAGS  += -I$(W5500)
 
 # -------------------------------------------------
 # Linker

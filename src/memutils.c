@@ -1,5 +1,4 @@
-#include <stddef.h>
-#include <stdint.h>
+#include "memutils.h"
 
 void* mem_cpy(void* dest, const void* src, size_t n) {
 	uint8_t* d = (uint8_t*)dest;

@@ -3,8 +3,6 @@
 #include "drivers/uarte.h"
 #include "memutils.h"
 #include "task.h"
-#include <stddef.h>
-#include <stdint.h>
 
 static log_t log_q[LOGGER_QUEUE_CAP];
 static volatile uint8_t front;	 // read idx
