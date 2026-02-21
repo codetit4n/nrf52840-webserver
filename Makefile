@@ -4,6 +4,8 @@
 PROJECT := webserver
 BUILD   := build
 
+.DEFAULT_GOAL := all
+
 # -------------------------------------------------
 # Toolchain
 # -------------------------------------------------
@@ -17,43 +19,54 @@ SIZE    := arm-none-eabi-size
 FREERTOS := freertos/FreeRTOS-Kernel
 NRFX_MDK := third_party/nrfx/mdk
 CMSIS    := third_party/cmsis/include
-W5500    := third_party/Wiznet_W5500
+WIZNET   := third_party/Wiznet-ioLibrary/Ethernet
 PLATFORM := platform/nrf52840
 
 # -------------------------------------------------
 # CPU flags (nRF52840 = Cortex-M4F)
 # -------------------------------------------------
-CFLAGS  := -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
-CFLAGS  += -O2 -g3 -ffunction-sections -fdata-sections
-CFLAGS  += -Wall -Wextra -Werror -Wmissing-field-initializers -Wpedantic
+CFLAGS_COMMON  := -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
+CFLAGS_COMMON  += -O2 -g3 -ffunction-sections -fdata-sections
 
 # -------------------------------------------------
 # Startup overrides
 # -------------------------------------------------
-CFLAGS += -DNRF52840_XXAA
-CFLAGS  += -D__HEAP_SIZE=0
-CFLAGS  += -D__STACK_SIZE=2048
+CFLAGS_COMMON += -DNRF52840_XXAA
+CFLAGS_COMMON += -D__HEAP_SIZE=0
+CFLAGS_COMMON += -D__STACK_SIZE=2048
 
 # -------------------------------------------------
 # Include paths
 # -------------------------------------------------
-CFLAGS  += -Iinclude
-CFLAGS  += -I$(FREERTOS)/include
-CFLAGS  += -I$(FREERTOS)/portable/GCC/ARM_CM4F
-CFLAGS  += -I$(NRFX_MDK)
-CFLAGS  += -I$(CMSIS)
-CFLAGS  += -I$(W5500)
+INCLUDES  := -Iinclude
+INCLUDES  += -I$(FREERTOS)/include
+INCLUDES  += -I$(FREERTOS)/portable/GCC/ARM_CM4F
+INCLUDES  += -I$(NRFX_MDK)
+INCLUDES  += -I$(CMSIS)
+INCLUDES  += -I$(WIZNET)
+
+# -------------------------------------------------
+# Warnings policy
+#   - Strict for my code (src/*)
+#   - Relaxed for third-party + RTOS
+# -------------------------------------------------
+APP_WARN    := -Wall -Wextra -Wmissing-field-initializers -Wpedantic -Werror
+VENDOR_WARN := -Wall \
+               -Wno-unused-variable \
+               -Wno-unused-parameter
+
+# Default flags (not used by build rules directly, but kept for convenience)
+CFLAGS := $(CFLAGS_COMMON) $(INCLUDES) $(VENDOR_WARN)
 
 # -------------------------------------------------
 # Linker
 # -------------------------------------------------
 LDSCRIPT := $(PLATFORM)/linker.ld
 
-LDFLAGS  := $(CFLAGS)
+LDFLAGS  := $(CFLAGS_COMMON)
 LDFLAGS  += -T$(LDSCRIPT)
 LDFLAGS  += -Wl,--gc-sections
 LDFLAGS  += -Wl,-Map=$(BUILD)/$(PROJECT).map
-
 # Allow INCLUDE "nrf_common.ld" to be resolved
 LDFLAGS  += -L$(PLATFORM)
 
@@ -63,7 +76,6 @@ LDFLAGS  += -L$(PLATFORM)
 APP_SRCS := $(wildcard src/*.c) \
             $(wildcard src/*/*.c) \
             $(wildcard src/*/*/*.c)
-
 
 FREERTOS_SRCS := \
 	$(FREERTOS)/list.c \
@@ -78,19 +90,29 @@ NRFX_SRCS := \
 STARTUP := \
 	$(NRFX_MDK)/gcc_startup_nrf52840.S
 
-SRCS := $(APP_SRCS) $(FREERTOS_SRCS) $(NRFX_SRCS)
+WIZNET_SRCS := \
+	$(WIZNET)/wizchip_conf.c \
+	$(WIZNET)/socket.c \
+	$(WIZNET)/W5500/w5500.c
+
+SRCS := $(APP_SRCS) $(FREERTOS_SRCS) $(NRFX_SRCS) $(WIZNET_SRCS)
 OBJS := $(SRCS:%.c=$(BUILD)/%.o) $(STARTUP:%.S=$(BUILD)/%.o)
 
 # -------------------------------------------------
 # Build rules
 # -------------------------------------------------
+# strict warnings only for files under src/
+define PICK_WARN
+$(if $(filter src/%,$(1)),$(APP_WARN),$(VENDOR_WARN))
+endef
+
 $(BUILD)/%.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS_COMMON) $(INCLUDES) $(call PICK_WARN,$<) -c $< -o $@
 
 $(BUILD)/%.o: %.S
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS_COMMON) $(INCLUDES) $(VENDOR_WARN) -c $< -o $@
 
 $(BUILD)/$(PROJECT).elf: $(OBJS)
 	@mkdir -p $(BUILD)
@@ -110,4 +132,3 @@ flash: all
 
 clean:
 	rm -rf $(BUILD)
-
