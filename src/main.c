@@ -18,7 +18,7 @@ static void net_task(void* arg) {
 	w5500_init();
 
 	for (;;) {
-		uint8_t ver = getPHYCFGR();
+		uint8_t ver = getVERSIONR();
 
 		logger_log_hex_len("W5500 VERSIONR:",
 			(uint8_t)(sizeof("W5500 VERSIONR:") - 1),
