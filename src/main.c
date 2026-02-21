@@ -2,45 +2,30 @@
 #include "drivers/spi.h"
 #include "logger.h"
 #include "task.h"
+#include "w5500.h"
 
-#define CSN_PIN 26
+void w5500_init(void);
 
-static const uint8_t w5500_hdr[4] = {0x00, 0x39, 0x00, 0x00};
-
-static void spi_task(void* arg) {
+// just testing w5500 port
+static void net_task(void* arg) {
 	(void)arg;
 
-	static const spi_device_t w5500 = {.cs_pin = CSN_PIN,
-		.mode = SPI_MODE_0,
-		.frequency = SPI_FREQ_8M,
-		.order = SPI_MSB_FIRST,
-		.dummy_byte = 0xFF};
+	logger_log_literal_len("NET:",
+		(uint8_t)(sizeof("NET:") - 1),
+		"INIT",
+		(uint8_t)(sizeof("INIT") - 1));
 
-	spi_device_init(&w5500);
-	// Let W5500 finish power-up before first access
-	vTaskDelay(pdMS_TO_TICKS(150));
-
-	uint8_t version[4] = {0};
+	w5500_init();
 
 	for (;;) {
-		if (spi_begin(&w5500) == 0) {
+		uint8_t ver = getPHYCFGR();
 
-			(void)spi_txrx(w5500_hdr, version, sizeof(w5500_hdr));
+		logger_log_hex_len("W5500 VERSIONR:",
+			(uint8_t)(sizeof("W5500 VERSIONR:") - 1),
+			&ver,
+			1);
 
-			logger_log_hex_len("W5500 VERSIONR:",
-				(uint8_t)(sizeof("W5500 VERSIONR:") - 1),
-				&version[3],
-				1);
-
-			(void)spi_end();
-		} else {
-			logger_log_literal_len("SPI:",
-				(uint8_t)(sizeof("SPI:") - 1),
-				"BEGIN FAIL",
-				(uint8_t)(sizeof("BEGIN FAIL") - 1));
-		}
-
-		vTaskDelay(pdMS_TO_TICKS(500));
+		vTaskDelay(pdMS_TO_TICKS(1000));
 	}
 }
 
@@ -48,7 +33,7 @@ int main(void) {
 	spim_init();
 	logger_init();
 
-	BaseType_t ok = xTaskCreate(spi_task, "spi_task", 256, NULL, 2, NULL);
+	BaseType_t ok = xTaskCreate(net_task, "net_task", 512, NULL, 2, NULL);
 	if (ok != pdPASS) {
 		taskDISABLE_INTERRUPTS();
 		for (;;)

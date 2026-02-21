@@ -44,6 +44,7 @@ INCLUDES  += -I$(FREERTOS)/portable/GCC/ARM_CM4F
 INCLUDES  += -I$(NRFX_MDK)
 INCLUDES  += -I$(CMSIS)
 INCLUDES  += -I$(WIZNET)
+INCLUDES  += -I$(WIZNET)/W5500
 
 # -------------------------------------------------
 # Warnings policy
@@ -51,12 +52,12 @@ INCLUDES  += -I$(WIZNET)
 #   - Relaxed for third-party + RTOS
 # -------------------------------------------------
 APP_WARN    := -Wall -Wextra -Wmissing-field-initializers -Wpedantic -Werror
-VENDOR_WARN := -Wall \
-               -Wno-unused-variable \
-               -Wno-unused-parameter
+VENDOR_WARN := -w
 
 # Default flags (not used by build rules directly, but kept for convenience)
 CFLAGS := $(CFLAGS_COMMON) $(INCLUDES) $(VENDOR_WARN)
+
+WIZNET_CFLAGS := -D_WIZCHIP_=W5500 -D_WIZCHIP_IO_MODE_=_WIZCHIP_IO_MODE_SPI_
 
 # -------------------------------------------------
 # Linker
@@ -108,11 +109,11 @@ endef
 
 $(BUILD)/%.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS_COMMON) $(INCLUDES) $(call PICK_WARN,$<) -c $< -o $@
+	$(CC) $(CFLAGS_COMMON) $(INCLUDES) $(WIZNET_CFLAGS) $(call PICK_WARN,$<) -c $< -o $@
 
 $(BUILD)/%.o: %.S
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS_COMMON) $(INCLUDES) $(VENDOR_WARN) -c $< -o $@
+	$(CC) $(CFLAGS_COMMON) $(INCLUDES) $(WIZNET_CFLAGS) $(VENDOR_WARN) -c $< -o $@
 
 $(BUILD)/$(PROJECT).elf: $(OBJS)
 	@mkdir -p $(BUILD)
