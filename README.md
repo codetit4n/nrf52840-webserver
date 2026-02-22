@@ -6,7 +6,7 @@
 Writing a web server for the nRF52840 microcontroller to learn complex embedded systems programming
 and for fun. Built using FreeRTOS.
 
-### Work:
+### Work progress:
 
 - [x] UARTE driver
 - [x] Logger module - Ring buffer for log messages.
@@ -16,6 +16,12 @@ and for fun. Built using FreeRTOS.
 - [ ] SD card reader driver
 - [ ] Filesystem for SD card
 - ... and more to come
+
+#### Clone with submodules:
+
+```shell
+git clone --recurse-submodules https://github.com/codetit4n/nrf52840-webserver
+```
 
 ### Commands:
 

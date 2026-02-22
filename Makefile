@@ -51,7 +51,7 @@ INCLUDES  += -I$(WIZNET)/W5500
 #   - Strict for my code (src/*)
 #   - Relaxed for third-party + RTOS
 # -------------------------------------------------
-APP_WARN    := -Wall -Wextra -Wmissing-field-initializers -Wpedantic -Werror
+APP_WARN    := -Wall -Wextra -Wmissing-field-initializers -Wpedantic
 VENDOR_WARN := -w
 
 # Default flags (not used by build rules directly, but kept for convenience)
