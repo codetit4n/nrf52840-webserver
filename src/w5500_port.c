@@ -1,11 +1,9 @@
 // Port to make SPI Driver work with the Wiznet ioLibrary for W5500
-
 #include "FreeRTOS.h" // IWYU pragma: keep
 #include "drivers/spi.h"
+#include "net.h"
 #include "semphr.h"
 #include "wizchip_conf.h"
-
-#define CSN_PIN 26
 
 static SemaphoreHandle_t w5500_mutex;
 static StaticSemaphore_t w5500_mutex_buf;
