@@ -12,7 +12,7 @@ and for fun. Built using FreeRTOS.
 - [x] Logger module - Ring buffer for log messages.
 - [x] SPI driver
 - [x] W5500 ioLibrary port to work with SPI driver
-- [ ] Internet working over ethernet(W5500)
+- [x] Networking module minimal - static IP and hardcoded response
 - [ ] SD card reader driver
 - [ ] Filesystem for SD card
 - ... and more to come
