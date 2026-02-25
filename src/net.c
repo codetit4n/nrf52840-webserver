@@ -3,20 +3,23 @@
 #include "drivers/spi.h"
 #include "logger.h"
 #include "memutils.h"
+#include "portmacro.h"
 #include "socket.h"
 #include "task.h"
+#include "w5500.h"
+#include <stdint.h>
 
 static const uint8_t http_socks[HTTP_SOCK_COUNT] = {0, 1, 2, 3};
 
 static uint8_t rx_buf[SPI_MAX_XFER];
 
-// hardcoded for
-static const char http_resp[] = "HTTP/1.1 200 OK\r\n"
-				"Content-Type: text/plain\r\n"
-				"Content-Length: 6\r\n"
-				"Connection: close\r\n"
-				"\r\n"
-				"OK\n";
+// hardcoded for now
+static uint8_t http_resp[] = "HTTP/1.1 200 OK\r\n"
+			     "Content-Type: text/plain\r\n"
+			     "Content-Length: 3\r\n"
+			     "Connection: close\r\n"
+			     "\r\n"
+			     "OK\n";
 
 static void log_sock_st(uint8_t sock, uint8_t st) {
 	logger_log_literal_len("NET:",
@@ -61,19 +64,69 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 		break;
 
 	case SOCK_ESTABLISHED: {
-		uint16_t avail = getSn_RX_RSR(sock);
-		if (avail > 0) {
-			int32_t n = recv(sock, rx_buf, sizeof(rx_buf));
-			(void)n;
+
+		TickType_t start_tick = xTaskGetTickCount();
+
+		uint8_t found_rx = 0;
+
+		for (;;) {
+			if (getSn_SR(sock) != SOCK_ESTABLISHED) // state changed
+				break;				// exit
+
+			uint16_t avail = getSn_RX_RSR(sock); // some data received from client
+
+			if (avail > 0) {
+				// received something from the client
+				found_rx = 1;
+
+				// drain what's available - recv() advances W5500 RX read pointer.
+				int32_t n = recv(sock, rx_buf, sizeof(rx_buf));
+				if (n <= 0) {
+					// recv error - stop trying to read
+					break;
+				}
+
+				continue;
+			}
+
+			// no data available at this moment
+			TickType_t now_tick = xTaskGetTickCount();
+
+			// If never saw any RX and timeout expired - disconnect - client is idle
+			if (!found_rx && (now_tick - start_tick) >= REQUEST_TIMEOUT_TICKS) {
+				disconnect(sock);
+				break;
+			}
+
+			// If we already saw some RX, and now it's empty - request drained
+			if (found_rx) {
+				break;
+			}
+
+			// Still waiting for first byte: yield - do not hammer getSn_RX_RSR()
+			vTaskDelay(1);
 		}
 
-		int32_t s = send(sock, (uint8_t*)http_resp, (uint16_t)(sizeof(http_resp) - 1));
-		(void)s;
+		// If disconnected while waiting for data, skip sending response
+		if (getSn_SR(sock) == SOCK_ESTABLISHED) {
+			int32_t rc = send(sock, http_resp, (uint16_t)(sizeof(http_resp) - 1));
 
-		disconnect(sock); // client will see Connection: close
+			if (rc < 0) {
+				logger_log_literal_len("NET:",
+					(uint8_t)(sizeof("NET:") - 1),
+					"send() FAIL",
+					(uint8_t)(sizeof("send() FAIL") - 1));
+				close(sock); // hard recovery
+				break;
+			}
+			// todo later: handle partial send()
+
+			disconnect(sock);
+		}
 	} break;
 
 	case SOCK_CLOSE_WAIT:
+
 		close(sock);
 		break;
 
@@ -121,7 +174,14 @@ static void net_task(void* arg) {
 void net_init(void) {
 	w5500_init();
 
-	BaseType_t ok = xTaskCreate(net_task, "net_task", 512, NULL, 2, NULL);
+	BaseType_t ok = xTaskCreate(net_task, /* Task function */
+		"net_task",		      /* Name (for debug) */
+		2048,			      /* Stack size (words, not bytes) */
+		NULL,			      /* Parameters */
+		2,			      /* Priority */
+		NULL			      /* Task handle */
+	);
+
 	if (ok != pdPASS) {
 		taskDISABLE_INTERRUPTS();
 		for (;;)
