@@ -49,8 +49,16 @@
 /* GPIO Pins */
 // SPI
 #define SCK_PIN 2
-#define MOSI_PIN 27
-#define MISO_PIN 30
+#define MOSI_PIN 26
+#define MISO_PIN 27
 // UARTE
 #define TX_PIN 6 // P0.06: UARTE0 TXD -> DK J-Link VCOM RX
 #define RX_PIN 8 // P0.08: UARTE0 RXD <- DK J-Link VCOM TX (unused here)
+
+static inline void pin_low(uint32_t pin) {
+	GPIO_OUTCLR_REG = (1u << pin);
+}
+
+static inline void pin_high(uint32_t pin) {
+	GPIO_OUTSET_REG = (1u << pin);
+}

@@ -1,14 +1,18 @@
 // Port to make SPI Driver work with the Wiznet ioLibrary for W5500
 #include "FreeRTOS.h" // IWYU pragma: keep
+#include "board.h"
 #include "drivers/spi.h"
-#include "net.h"
+#include "modules/net.h"
 #include "semphr.h"
 #include "wizchip_conf.h"
+
+#define W5500_CSN_PIN 30
+#define W5500_RST_PIN 31
 
 static SemaphoreHandle_t w5500_mutex;
 static StaticSemaphore_t w5500_mutex_buf;
 
-static const spi_device_t w5500_dev = {.cs_pin = CSN_PIN,
+static const spi_device_t w5500_dev = {.cs_pin = W5500_CSN_PIN,
 	.mode = SPI_MODE_0,
 	.frequency = SPI_FREQ_8M,
 	.order = SPI_MSB_FIRST,
@@ -58,6 +62,17 @@ void w5500_init(void) {
 	reg_wizchip_spi_cbfunc(w5500_spi_readbyte, w5500_spi_writebyte);
 	reg_wizchip_spiburst_cbfunc(w5500_spi_readburst, w5500_spi_writeburst);
 	reg_wizchip_cris_cbfunc(w5500_cris_enter, w5500_cris_exit);
+
+	// RESET pin setup
+	GPIO_CNF(W5500_RST_PIN) = (1 << 0) | // DIR = Output
+				  (1 << 1) | // INPUT = Disconnect
+				  (0 << 2) | // No pull
+				  (0 << 8) | // Standard drive
+				  (0 << 16); // No sense
+
+	pin_low(W5500_RST_PIN);
+	vTaskDelay(pdMS_TO_TICKS(10));
+	pin_high(W5500_RST_PIN);
 
 	// Let W5500 finish power-up before first access
 	vTaskDelay(pdMS_TO_TICKS(150));

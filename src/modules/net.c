@@ -1,13 +1,10 @@
-#include "net.h"
+#include "modules/net.h"
 #include "FreeRTOS.h"
 #include "drivers/spi.h"
-#include "logger.h"
 #include "memutils.h"
-#include "portmacro.h"
+#include "modules/logger.h"
 #include "socket.h"
 #include "task.h"
-#include "w5500.h"
-#include <stdint.h>
 
 static const uint8_t http_socks[HTTP_SOCK_COUNT] = {0, 1, 2, 3};
 

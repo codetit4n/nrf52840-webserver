@@ -1,8 +1,8 @@
 #include "drivers/spi.h"
 #include "FreeRTOS.h"
 #include "board.h"
-#include "logger.h"
 #include "memutils.h"
+#include "modules/logger.h"
 #include "semphr.h"
 
 // from linker script
@@ -15,14 +15,6 @@ static uint8_t tx_staging_buf[SPI_MAX_XFER]; // only used if input tx buf is not
 static SemaphoreHandle_t spi_bus_mutex = NULL; // mutex for exclusive access to the SPI bus
 StaticSemaphore_t spi_bus_mutex_buf;
 static const spi_device_t* active_dev = NULL; // device currently active on the bus
-
-static void cs_low(uint32_t pin) {
-	GPIO_OUTCLR_REG = (1u << pin);
-}
-
-static void cs_high(uint32_t pin) {
-	GPIO_OUTSET_REG = (1u << pin);
-}
 
 // only one spi master for now
 void spim_init(void) {
@@ -89,7 +81,7 @@ void spi_device_init(const spi_device_t* dev) {
 				(0 << 2) | // PULL = 00 → Disabled
 				(0 << 8) | // DRIVE = 000 → Standard drive (S0S1)
 				(0 << 16); // SENSE = Disabled
-	cs_high(dev->cs_pin);
+	pin_high(dev->cs_pin);
 }
 
 int spi_begin(const spi_device_t* dev) {
@@ -146,7 +138,7 @@ int spi_begin(const spi_device_t* dev) {
 	SPIM_EVENTS_STARTED_REG = 0;
 	SPIM_EVENTS_STOPPED_REG = 0;
 
-	cs_low(dev->cs_pin);
+	pin_low(dev->cs_pin);
 	active_dev = dev;
 
 	return 0;
@@ -462,7 +454,7 @@ int spi_end(void) {
 	if (active_dev == NULL)
 		return -1;
 
-	cs_high(active_dev->cs_pin);
+	pin_high(active_dev->cs_pin);
 	active_dev = NULL;
 
 	xSemaphoreGive(spi_bus_mutex);

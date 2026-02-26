@@ -1,9 +1,8 @@
 #include "FreeRTOS.h" // IWYU pragma: keep
 #include "drivers/spi.h"
-#include "logger.h"
-#include "net.h"
+#include "modules/logger.h"
+#include "modules/net.h"
 #include "task.h"
-#include <stdint.h>
 
 static void startup_task(void* arg) {
 	(void)arg;

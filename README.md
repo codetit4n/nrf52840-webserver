@@ -14,8 +14,9 @@ and for fun. Built using FreeRTOS.
 - [x] W5500 ioLibrary port to work with SPI driver
 - [x] Networking module minimal - static IP and hardcoded response
 - [ ] SD card reader driver
-- [ ] Filesystem for SD card
-- ... and more to come
+- [ ] Filesystem for SD card - read/write or maybe fatfs
+- [ ] Full Networking module
+- ... and more
 
 #### Clone with submodules:
 
@@ -37,9 +38,3 @@ make clean
 # Monitor the serial output from the nRF52840 for debugging - 1M baud rate
 minicom -D /dev/ttyACM0 -b 1000000
 ```
-
-#### Skipped for now/TODOs for later:
-
-- Logger module:
-  - Implement ISR Logging fns
-  - make `payload_t` enum `unit8_t` backed - optimization
