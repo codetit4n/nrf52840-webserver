@@ -1,5 +1,6 @@
 #include "drivers/spi.h"
 #include "FreeRTOS.h"
+#include "FreeRTOSConfig.h"
 #include "board.h"
 #include "memutils.h"
 #include "modules/logger.h"
@@ -82,6 +83,139 @@ void spi_device_init(const spi_device_t* dev) {
 				(0 << 8) | // DRIVE = 000 → Standard drive (S0S1)
 				(0 << 16); // SENSE = Disabled
 	pin_high(dev->cs_pin);
+}
+
+int spi_clock_idle(const spi_device_t* dev, size_t nbytes) {
+	if (dev == NULL) {
+		logger_log_literal_len("SPI IDLE:",
+			(uint8_t)(sizeof("SPI IDLE:") - 1),
+			"NULL DEV",
+			(uint8_t)(sizeof("NULL DEV") - 1));
+		configASSERT(0);
+		return -1;
+	}
+
+	if (nbytes == 0) {
+		logger_log_literal_len("SPI IDLE:",
+			(uint8_t)(sizeof("SPI IDLE:") - 1),
+			"NO CLOCK DATA",
+			(uint8_t)(sizeof("NO CLOCK DATA") - 1));
+		return -1;
+	}
+
+	if (nbytes > SPI_MAX_XFER) {
+		logger_log_literal_len("SPI IDLE:",
+			(uint8_t)(sizeof("SPI IDLE:") - 1),
+			"DATA LIMIT EXCEED",
+			(uint8_t)(sizeof("DATA LIMIT EXCEED") - 1));
+		configASSERT(0);
+		return -1;
+	}
+
+	BaseType_t ok = xSemaphoreTake(spi_bus_mutex, portMAX_DELAY);
+	if (ok != pdTRUE) {
+		logger_log_literal_len("SPI IDLE:",
+			(uint8_t)(sizeof("SPI IDLE:") - 1),
+			"MUTEX TAKE FAILED",
+			(uint8_t)(sizeof("MUTEX TAKE FAILED") - 1));
+		return -1;
+	}
+
+	if (active_dev != NULL) {
+		logger_log_literal_len("SPI IDLE:",
+			(uint8_t)(sizeof("SPI IDLE:") - 1),
+			"DEV ACTIVE",
+			(uint8_t)(sizeof("DEV ACTIVE") - 1));
+		xSemaphoreGive(spi_bus_mutex);
+		configASSERT(0);
+		return -1;
+	}
+
+	pin_high(dev->cs_pin);
+
+	uint32_t order = 0;
+	switch (dev->order) {
+	case SPI_MSB_FIRST:
+		order = 0;
+		break;
+	case SPI_LSB_FIRST:
+		order = 1;
+		break;
+	}
+
+	uint32_t cfg = 0;
+	switch (dev->mode) {
+	case SPI_MODE_1:
+		cfg = (1 << 0) | (0 << 1) | (order << 2);
+		break;
+	case SPI_MODE_2:
+		cfg = (0 << 0) | (1 << 1) | (order << 2);
+		break;
+	case SPI_MODE_3:
+		cfg = (1 << 0) | (1 << 1) | (order << 2);
+		break;
+	case SPI_MODE_0:
+	default:
+		cfg = (0 << 0) | (0 << 1) | (order << 2);
+		break;
+	}
+
+	SPIM_CONFIG_REG = cfg;
+	SPIM_FREQUENCY_REG = dev->frequency;
+	SPIM_ORC_REG = dev->dummy_byte;
+
+	SPIM_EVENTS_END_REG = 0;
+	SPIM_EVENTS_STARTED_REG = 0;
+	SPIM_EVENTS_STOPPED_REG = 0;
+
+	for (size_t i = 0; i < nbytes; i++) {
+		tx_staging_buf[i] = dev->dummy_byte;
+	}
+
+	SPIM_TXD_PTR_REG = (uintptr_t)tx_staging_buf;
+	SPIM_TXD_MAXCNT_REG = nbytes;
+
+	SPIM_RXD_PTR_REG = (uintptr_t)scratch_buf;
+	SPIM_RXD_MAXCNT_REG = nbytes;
+
+	SPIM_TASKS_START_REG = 1;
+
+	TickType_t start_tick = xTaskGetTickCount();
+
+	while (SPIM_EVENTS_END_REG == 0 && (xTaskGetTickCount() - start_tick) < SPI_TIMEOUT_TICKS) {
+		vTaskDelay(0);
+	}
+
+	if (SPIM_EVENTS_END_REG == 0) {
+		SPIM_TASKS_STOP_REG = 1;
+
+		TickType_t stop_start = xTaskGetTickCount();
+		while (SPIM_EVENTS_STOPPED_REG == 0 &&
+			(xTaskGetTickCount() - stop_start) < pdMS_TO_TICKS(5)) {
+			vTaskDelay(1);
+		}
+
+		SPIM_EVENTS_END_REG = 0;
+		SPIM_EVENTS_STOPPED_REG = 0;
+		SPIM_EVENTS_STARTED_REG = 0;
+
+		logger_log_literal_len("SPI IDLE:",
+			(uint8_t)(sizeof("SPI IDLE:") - 1),
+			"TIMEOUT",
+			(uint8_t)(sizeof("TIMEOUT") - 1));
+
+		xSemaphoreGive(spi_bus_mutex);
+		return -1;
+	}
+
+	SPIM_EVENTS_END_REG = 0;
+	SPIM_EVENTS_STOPPED_REG = 0;
+	SPIM_EVENTS_STARTED_REG = 0;
+
+	pin_high(dev->cs_pin);
+
+	xSemaphoreGive(spi_bus_mutex);
+	return 0;
 }
 
 int spi_begin(const spi_device_t* dev) {

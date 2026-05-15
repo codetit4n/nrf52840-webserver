@@ -44,6 +44,8 @@ void spim_init(void);
 // Static Hardware Setup only
 void spi_device_init(const spi_device_t* dev);
 
+int spi_clock_idle(const spi_device_t* dev, size_t nbytes);
+
 // Transfers only valid b/w begin/end
 int spi_begin(const spi_device_t* dev); // stores active dev config (including dummy byte)
 int spi_end(void);			// deasserts CS and clears active dev config

@@ -2,6 +2,7 @@
 #include "drivers/spi.h"
 #include "modules/logger.h"
 #include "modules/net.h"
+#include "modules/sd.h"
 #include "task.h"
 
 static void startup_task(void* arg) {
@@ -9,7 +10,8 @@ static void startup_task(void* arg) {
 
 	// Scheduler dependent initialization
 	logger_init();
-	net_init();
+	net_init(); // ignoring for now and focusing on sd card driver
+	sd_module_init();
 
 	vTaskDelete(NULL);
 }
