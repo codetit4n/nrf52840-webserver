@@ -268,3 +268,7 @@ void logger_log_hex_len(const char* label,
 
 	logger_log(l);
 }
+
+void logger_log_nl(void) {
+	logger_log_literal_len("", 0, "\r\n", 2);
+}

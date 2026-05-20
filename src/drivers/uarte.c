@@ -67,6 +67,9 @@ void uarte_init(void) {
 			   (0 << 8) | // DRIVE = standard (field)
 			   (0 << 16); // SENSE = disabled
 
+	// to avoid initial garbage transmission
+	pin_high(TX_PIN);
+
 	// PSEL format: PIN[4:0] | PORT(bit5) | CONNECT(bit31: 0=connected, 1=disconnected)
 	UARTE_PSEL_TXD_REG = (TX_PIN << 0) | (0 << 5) | (0 << 31);
 
@@ -100,6 +103,9 @@ void uarte_recover(void) {
 	// clear events and reset state
 	UARTE_EVENTS_ENDTX_REG = 0;
 	UARTE_EVENTS_TXSTOPPED_REG = 0;
+
+	// to avoid initial garbage transmission
+	pin_high(TX_PIN);
 
 	UARTE_ENABLE_REG = 8; // Enable UARTE
 }

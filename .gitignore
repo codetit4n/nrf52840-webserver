@@ -57,4 +57,4 @@ dkms.conf
 build/
 .cache/
 compile_commands.json
-*.pdf
+misc/

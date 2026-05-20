@@ -12,8 +12,8 @@ void sd_task(void* arg) {
 
 	logger_log_literal_len("SD TASK:",
 		(uint8_t)(sizeof("SD TASK:") - 1),
-		"START",
-		(uint8_t)(sizeof("START") - 1));
+		"STARTED",
+		(uint8_t)(sizeof("STARTED") - 1));
 
 	sd_init();
 
@@ -33,7 +33,7 @@ void sd_module_init(void) {
 		"sd_task",		     /* Name (for debug) */
 		1024,			     /* Stack size (words, not bytes) */
 		NULL,			     /* Parameters */
-		1,			     /* Priority */
+		2,			     /* Priority */
 		NULL			     /* Task handle */
 	);
 

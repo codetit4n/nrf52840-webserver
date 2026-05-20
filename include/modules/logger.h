@@ -36,3 +36,4 @@ void logger_log_hex_len(const char* label,
 	uint8_t label_len,
 	const uint8_t* data,
 	uint8_t data_len);
+void logger_log_nl(void);
