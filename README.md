@@ -13,7 +13,7 @@ and for fun. Built using FreeRTOS.
 - [x] SPI driver
 - [x] W5500 ioLibrary port to work with SPI driver
 - [x] Networking module minimal - static IP and hardcoded response
-- [ ] SD card driver
+- [ ] SD card driver - Only supports SDHC and SDXC, no SDv1 cards. Uses SPI mode.
 - [ ] Filesystem for SD card - read/write or maybe fatfs
 - [ ] Full Networking module
 - ... and more
