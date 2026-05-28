@@ -5,7 +5,7 @@
 
 #define LOGGER_MAX_LOG_PAYLOAD 64
 #define LOGGER_QUEUE_CAP 64
-#define LOGGER_MAX_LOG_LABEL 16
+#define LOGGER_MAX_LOG_LABEL 20
 
 typedef enum {
 	LOG_HEX,

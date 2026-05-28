@@ -15,12 +15,17 @@ void sd_task(void* arg) {
 		"STARTED",
 		(uint8_t)(sizeof("STARTED") - 1));
 
-	sd_init();
-
-	logger_log_literal_len("SD TASK:",
-		(uint8_t)(sizeof("SD TASK:") - 1),
-		"INIT DONE",
-		(uint8_t)(sizeof("INIT DONE") - 1));
+	if (sd_init() != 0) {
+		logger_log_literal_len("SD TASK:",
+			(uint8_t)(sizeof("SD TASK:") - 1),
+			"INIT FAILED",
+			(uint8_t)(sizeof("INIT FAILED") - 1));
+	} else {
+		logger_log_literal_len("SD TASK:",
+			(uint8_t)(sizeof("SD TASK:") - 1),
+			"INIT DONE",
+			(uint8_t)(sizeof("INIT DONE") - 1));
+	}
 
 	for (;;) {
 		vTaskDelay(pdMS_TO_TICKS(1000));
