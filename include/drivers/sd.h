@@ -9,5 +9,8 @@
 #define SD_R1_POLL_TRIES 10
 
 int sd_init(void);
-int sd_send_cmd(const uint8_t cmd[8], uint8_t* r1, uint8_t* extra, size_t extra_len);
-void sd_read_block(void);
+int sd_exec_cmd(const uint8_t cmd[8], uint8_t* r1, uint8_t* extra, size_t extra_len);
+int sd_begin_cmd(const uint8_t cmd[8], uint8_t* r1);		// keeps CS asserted
+int sd_wait_token(const uint8_t expected, uint32_t timeout_ms); // only call after sd_begin_cmd
+int sd_end_cmd(void);
+int sd_read_block(uint32_t block_number, uint8_t* buffer);
