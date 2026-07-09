@@ -60,16 +60,38 @@ minicom -D /dev/ttyACM0 -b 1000000
 - [x] SDHC/SDXC initialization in SPI mode
   - [x] CMD0
   - [x] CMD8
-  - [x] ACMD41
+  - [x] CMD55 + ACMD41
   - [x] CMD58
   - [x] SDHC/SDXC detection
+
 - [x] Read CSD using CMD9
+  - [x] Keep CS asserted for the complete data transaction
+  - [x] Wait for the `0xFE` data token
+  - [x] Read 16-byte CSD
+  - [x] Read and discard CRC bytes
+
 - [x] Decode card block count from CSD v2
 - [x] Read a single 512-byte block using CMD17
+  - [x] Build the CMD17 argument from the requested block number
+  - [x] Send the block number in big-endian wire order
+  - [x] Wait for the `0xFE` data token
+  - [x] Read 512 data bytes
+  - [x] Read and discard CRC bytes
+
 - [x] Verify block 0 against a PC-side sector dump
 - [ ] Verify repeated raw reads are stable
+- [ ] Verify a non-zero block against a PC-side sector dump
 - [ ] Add CRC16 validation for received data blocks
-- [ ] Create a clean read-only block-device API
+- [x] Create a clean read-only block-device API
+  - [x] Add `sd_status_t`
+  - [x] Return specific errors instead of `-1`
+  - [x] Add initialization-state tracking
+  - [x] Add block-range validation
+  - [x] Keep command helpers private to the SD implementation
+  - [x] Define command transaction ownership rules
+  - [x] Expose only `sd_init()` and `sd_read_block()` publicly
+
+- [ ] Verify SD and W5500 operation on the shared SPI bus
 
 > Current limitation: only SDHC and SDXC cards are supported. SDSC and SD v1 cards are intentionally rejected.
 
