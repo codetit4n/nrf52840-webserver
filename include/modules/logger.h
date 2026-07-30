@@ -37,3 +37,6 @@ void logger_log_hex_len(const char* label,
 	const uint8_t* data,
 	uint8_t data_len);
 void logger_log_nl(void);
+
+// block until all queued log entries are transmitted
+void logger_flush(void); // Try to avoid as much as you can

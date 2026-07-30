@@ -22,8 +22,8 @@
  * Task and memory configuration
  *----------------------------------------------------------*/
 
-/* Max number of priorities (0 .. 2) */
-#define configMAX_PRIORITIES (3)
+/* Max number of priorities (0 .. 3) */
+#define configMAX_PRIORITIES (4)
 
 /* Stack sizes are in WORDS (not bytes) */
 #define configMINIMAL_STACK_SIZE (128)

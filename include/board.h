@@ -54,6 +54,9 @@
 // UARTE
 #define TX_PIN 6 // P0.06: UARTE0 TXD -> DK J-Link VCOM RX
 #define RX_PIN 8 // P0.08: UARTE0 RXD <- DK J-Link VCOM TX (unused here)
+// CSN Pins
+#define W5500_CSN_PIN 30
+#define SD_CSN_PIN 4
 
 static inline void pin_low(uint32_t pin) {
 	GPIO_OUTCLR_REG = (1u << pin);

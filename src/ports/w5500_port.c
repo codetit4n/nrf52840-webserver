@@ -6,7 +6,6 @@
 #include "semphr.h"
 #include "wizchip_conf.h"
 
-#define W5500_CSN_PIN 30
 #define W5500_RST_PIN 31
 
 static SemaphoreHandle_t w5500_mutex;

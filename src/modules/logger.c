@@ -2,7 +2,9 @@
 #include "FreeRTOS.h" // IWYU pragma: keep
 #include "drivers/uarte.h"
 #include "memutils.h"
+#include "semphr.h"
 #include "task.h"
+#include <stdint.h>
 
 static log_t log_q[LOGGER_QUEUE_CAP];
 static volatile uint8_t front;	 // read idx
@@ -11,6 +13,8 @@ static volatile uint8_t ctr;	 // number of valid entries (0..CAP)
 static volatile uint8_t dropped; // will use later
 
 static TaskHandle_t logger_task_handle = NULL;
+static SemaphoreHandle_t logger_flush_done = NULL;
+static volatile uint8_t logger_flush_requested = 0;
 
 static inline uint8_t idx_next(uint8_t i) {
 	++i;
@@ -20,6 +24,15 @@ static inline uint8_t idx_next(uint8_t i) {
 void logger_init(void) {
 	uarte_init();
 	front = rear = ctr = dropped = 0;
+	logger_flush_requested = 0;
+
+	logger_flush_done = xSemaphoreCreateBinary();
+
+	if (logger_flush_done == NULL) {
+		taskDISABLE_INTERRUPTS();
+		for (;;)
+			;
+	}
 
 	BaseType_t ok = xTaskCreate(logger_task, /* Task function */
 		"logger_task",			 /* Name (for debug) */
@@ -34,6 +47,21 @@ void logger_init(void) {
 		for (;;)
 			;
 	}
+}
+void logger_flush(void) {
+	if (logger_task_handle == NULL || logger_flush_done == NULL) {
+		return;
+	}
+
+	taskENTER_CRITICAL();
+	logger_flush_requested = 1;
+	taskEXIT_CRITICAL();
+
+	/* Ensure the logger task wakes even if it was waiting. */
+	xTaskNotifyGive(logger_task_handle);
+
+	/* Block until logger_task confirms the queue was drained. */
+	xSemaphoreTake(logger_flush_done, portMAX_DELAY);
 }
 
 // Enqueue log entry: overwrite oldest when full
@@ -152,42 +180,64 @@ void logger_task(void* arg) {
 
 	log_t log = {0};
 
-	ulTaskNotifyTake(pdTRUE, 0); // clear
+	uint8_t line[LOGGER_MAX_LOG_LABEL + (2 * LOGGER_MAX_LOG_PAYLOAD) + 2];
+
+	ulTaskNotifyTake(pdTRUE, 0); // clear pending notification
 
 	for (;;) {
-
-		// drain the queue
+		// Drain the queue.
 		while (logger_try_pop(&log)) {
+			size_t line_len = 0;
 
 			fill_label(log.label, &log);
-			uarte_write(log.label, LOGGER_MAX_LOG_LABEL);
+
+			mem_cpy(&line[line_len], log.label, LOGGER_MAX_LOG_LABEL);
+			line_len += LOGGER_MAX_LOG_LABEL;
 
 			switch (log.type) {
 			case LOG_UINT: {
-				uint32_t u32 = 0;
-				mem_cpy(&u32, log.payload, sizeof(u32));
+				uint32_t value = 0;
+				mem_cpy(&value, log.payload, sizeof(value));
 
-				uint8_t out[10]; // max uint32_t is 10 digits
-				uint8_t out_len = format_u32(u32, out);
-
-				uarte_write(out, out_len);
+				line_len += format_u32(value, &line[line_len]);
 				break;
 			}
-			case LOG_HEX: {
-				uint8_t out[2 * LOGGER_MAX_LOG_PAYLOAD]; // each byte -> 2 hex chars
-				uint8_t out_len =
-					format_hex_bytes((const uint8_t*)log.payload, log.len, out);
 
-				uarte_write(out, out_len);
+			case LOG_HEX:
+				line_len += format_hex_bytes(log.payload, log.len, &line[line_len]);
 				break;
-			}
+
 			case LOG_STRING:
 			default:
-				uarte_write(log.payload, log.len);
+				mem_cpy(&line[line_len], log.payload, log.len);
+				line_len += log.len;
+				break;
 			}
-			uarte_write((uint8_t*)"\r\n", 2);
+
+			line[line_len++] = '\r';
+			line[line_len++] = '\n';
+
+			// Send the complete log line using one UARTE transfer.
+			uarte_write(line, line_len);
 		}
-		ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // block - wait for new logs
+
+		uint8_t signal_flush = 0;
+
+		taskENTER_CRITICAL();
+
+		if (logger_flush_requested && ctr == 0) {
+			logger_flush_requested = 0;
+			signal_flush = 1;
+		}
+
+		taskEXIT_CRITICAL();
+
+		if (signal_flush) {
+			xSemaphoreGive(logger_flush_done);
+		}
+
+		// Block until a producer adds another log entry.
+		ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 	}
 }
 

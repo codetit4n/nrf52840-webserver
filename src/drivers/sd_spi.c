@@ -1,9 +1,9 @@
 #include "FreeRTOS.h"
+#include "board.h"
 #include "drivers/sd.h"
 #include "drivers/spi.h"
 #include "modules/logger.h"
 #include "task.h"
-#include <stdint.h>
 
 static const uint8_t SD_CMD0[] = {0x40, 0x00, 0x00, 0x00, 0x00, 0x95};	// CMD0 with CRC
 static const uint8_t SD_CMD8[] = {0x48, 0x00, 0x00, 0x01, 0xAA, 0x87};	// CMD8 with CRC

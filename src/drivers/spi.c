@@ -77,11 +77,21 @@ void spim_init(void) {
 }
 
 void spi_device_init(const spi_device_t* dev) {
-	GPIO_CNF(dev->cs_pin) = (1 << 0) | // DIR = 1 → Output
-				(1 << 1) | // INPUT = 1 → Disconnect input buffer
-				(0 << 2) | // PULL = 00 → Disabled
-				(0 << 8) | // DRIVE = 000 → Standard drive (S0S1)
+	if (dev == NULL) {
+		configASSERT(0);
+		return;
+	}
+
+	// This helps avoid a brief low pulse on CS during configuration.
+	pin_high(dev->cs_pin);
+
+	GPIO_CNF(dev->cs_pin) = (1 << 0) | // DIR = Output
+				(1 << 1) | // INPUT = Disconnect
+				(0 << 2) | // PULL = Disabled
+				(0 << 8) | // Standard drive
 				(0 << 16); // SENSE = Disabled
+
+	// Reassert inactive state after configuration.
 	pin_high(dev->cs_pin);
 }
 

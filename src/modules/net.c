@@ -19,14 +19,12 @@ static uint8_t http_resp[] = "HTTP/1.1 200 OK\r\n"
 			     "OK\n";
 
 static void log_sock_st(uint8_t sock, uint8_t st) {
-	logger_log_literal_len("NET:",
-		(uint8_t)(sizeof("NET:") - 1),
-		"SOCK STATUS CHANGE",
-		(uint8_t)(sizeof("SOCK STATUS CHANGE") - 1));
-
 	// log sock id + status as 2 bytes: [sock, st]
-	uint8_t v[2] = {sock, st};
-	logger_log_hex_len("NET:", (uint8_t)(sizeof("NET:") - 1), v, 2);
+	uint8_t value[2] = {sock, st};
+	logger_log_hex_len("NET SOCK/STATE:",
+		(uint8_t)(sizeof("NET SOCK/STATE:") - 1),
+		value,
+		(uint8_t)sizeof(value));
 }
 
 static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
@@ -128,7 +126,6 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 		break;
 
 	default:
-		// optional: recover if stuck later
 		break;
 	}
 }
