@@ -23,6 +23,13 @@ static const spi_device_t sd_dev = {.cs_pin = SD_CSN_PIN,
 static uint64_t block_count = 0;
 static uint8_t sd_initialized = 0;
 
+uint8_t sd_is_ready(void) {
+	return sd_initialized;
+}
+uint64_t sd_get_block_count(void) {
+	return block_count;
+}
+
 static sd_status_t sd_begin_cmd(const uint8_t cmd[6], uint8_t* r1) {
 	if (cmd == NULL || r1 == NULL) {
 		return SD_ERR_INVALID_ARG;
@@ -455,11 +462,6 @@ sd_status_t sd_read_block(uint32_t block, uint8_t* buffer) {
 
 		return status;
 	}
-
-	logger_log_uint_len("SD READ BLOCK:R1",
-		(uint8_t)(sizeof("SD READ BLOCK:R1") - 1),
-		&r1,
-		sizeof(r1));
 
 	if (r1 != 0x00) {
 		sd_end_cmd();

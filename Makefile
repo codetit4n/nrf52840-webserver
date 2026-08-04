@@ -20,6 +20,7 @@ FREERTOS := freertos/FreeRTOS-Kernel
 NRFX_MDK := third_party/nrfx/mdk
 CMSIS    := third_party/cmsis/include
 WIZNET   := third_party/Wiznet-ioLibrary/Ethernet
+FATFS   := third_party/FatFs/source
 PLATFORM := platform/nrf52840
 
 # -------------------------------------------------
@@ -45,6 +46,7 @@ INCLUDES  += -I$(NRFX_MDK)
 INCLUDES  += -I$(CMSIS)
 INCLUDES  += -I$(WIZNET)
 INCLUDES  += -I$(WIZNET)/W5500
+INCLUDES  += -I$(FATFS)
 
 # -------------------------------------------------
 # Warnings policy
@@ -96,7 +98,10 @@ WIZNET_SRCS := \
 	$(WIZNET)/socket.c \
 	$(WIZNET)/W5500/w5500.c
 
-SRCS := $(APP_SRCS) $(FREERTOS_SRCS) $(NRFX_SRCS) $(WIZNET_SRCS)
+FATFS_SRCS := \
+	$(FATFS)/ff.c
+
+SRCS := $(APP_SRCS) $(FREERTOS_SRCS) $(NRFX_SRCS) $(WIZNET_SRCS) $(FATFS_SRCS)
 OBJS := $(SRCS:%.c=$(BUILD)/%.o) $(STARTUP:%.S=$(BUILD)/%.o)
 
 # -------------------------------------------------

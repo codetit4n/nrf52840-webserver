@@ -4,7 +4,6 @@
 #include "drivers/spi.h"
 #include "modules/logger.h"
 #include "modules/net.h"
-#include "modules/sd.h"
 #include "task.h"
 #define SD_INIT_MAX_ATTEMPTS 3
 

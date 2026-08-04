@@ -21,3 +21,6 @@ typedef enum {
 
 sd_status_t sd_init(void);
 sd_status_t sd_read_block(uint32_t block, uint8_t* buffer);
+
+uint8_t sd_is_ready(void);
+uint64_t sd_get_block_count(void);

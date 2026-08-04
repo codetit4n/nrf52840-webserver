@@ -45,7 +45,7 @@ minicom -D /dev/ttyACM0 -b 1000000
 - [x] Minimal networking module
   - [x] Static IP configuration
   - [x] Hardcoded HTTP response
-- [ ] Re-enable W5500 alongside SD card
+- [x] Re-enable W5500 alongside SD card
 - [ ] Serve files from SD card over HTTP
 - [ ] Add basic static-file support
   - [ ] HTML
