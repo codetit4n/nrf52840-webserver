@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 // Static Config
 #define MAC {0x02, 0x00, 0x00, 0x00, 0x00, 0x50}
 #define IP {192, 168, 29, 70}
@@ -14,7 +16,7 @@
 #define CLEANUP_TIMEOUT_TICKS pdMS_TO_TICKS(250) // close if no RX data arrives within the timeout
 
 // Initialize the networking module
-void net_init(void);
+int net_init(void);
 
 // Initialize the porting layer for the W5500
-void w5500_init(void);
+int8_t w5500_init(void);

@@ -187,8 +187,6 @@ sd_status_t sd_init(void) {
 		return status;
 	}
 
-	logger_log_hex_len("SD INIT:CMD0/R1", sizeof("SD INIT:CMD0/R1") - 1, &r1, 1);
-
 	// CMD8
 
 	r1 = 0xFF;
@@ -205,23 +203,16 @@ sd_status_t sd_init(void) {
 		return status;
 	}
 
-	logger_log_hex_len("SD INIT:CMD8/R1", sizeof("SD INIT:CMD8/R1") - 1, &r1, 1);
-
-	logger_log_hex_len("SD INIT:CMD8/R7", sizeof("SD INIT:CMD8/R7") - 1, r7, sizeof(r7));
-
-	if (r1 == 0x01 && r7[0] == 0x00 && r7[1] == 0x00 && r7[2] == 0x01 && r7[3] == 0xAA) {
-		logger_log_literal_len("SD INIT:",
-			(uint8_t)(sizeof("SD INIT:") - 1),
-			"SD V2 CARD DETECTED",
-			(uint8_t)(sizeof("SD V2 CARD DETECTED") - 1));
-	} else if (r1 == 0x05) {
+	if (r1 == 0x05) {
 		logger_log_literal_len("SD INIT:",
 			(uint8_t)(sizeof("SD INIT:") - 1),
 			"LEGACY CARD REJECTED",
 			(uint8_t)(sizeof("LEGACY CARD REJECTED") - 1));
 
 		return SD_ERR_UNSUPPORTED_CARD;
-	} else {
+	}
+
+	if (r1 != 0x01 || r7[0] != 0x00 || r7[1] != 0x00 || r7[2] != 0x01 || r7[3] != 0xAA) {
 		logger_log_literal_len("SD INIT:",
 			(uint8_t)(sizeof("SD INIT:") - 1),
 			"UNKNOWN CMD8 RESPONSE",
@@ -257,8 +248,6 @@ sd_status_t sd_init(void) {
 
 			return status;
 		}
-
-		logger_log_hex_len("SD INIT:ACMD41/R1", sizeof("SD INIT:ACMD41/R1") - 1, &r1, 1);
 
 		if (r1 == 0x00) {
 			initialized = 1;
@@ -311,16 +300,9 @@ sd_status_t sd_init(void) {
 		return SD_ERR_CMD_RESPONSE;
 	}
 
-	logger_log_hex_len("SD INIT:CMD58/OCR", sizeof("SD INIT:CMD58/OCR") - 1, ocr, sizeof(ocr));
-
 	uint8_t ccs = (ocr[0] & 0x40) ? 1 : 0;
 
-	if (ccs) {
-		logger_log_literal_len("SD INIT:",
-			(uint8_t)(sizeof("SD INIT:") - 1),
-			"SDHC/SDXC CARD DETECTED",
-			(uint8_t)(sizeof("SDHC/SDXC CARD DETECTED") - 1));
-	} else {
+	if (!ccs) {
 		logger_log_literal_len("SD INIT:",
 			(uint8_t)(sizeof("SD INIT:") - 1),
 			"SDSC CARD - NOT SUPPORTED",
@@ -385,8 +367,6 @@ sd_status_t sd_init(void) {
 		return SD_ERR_SPI;
 	}
 
-	logger_log_hex_len("SD INIT:CMD9/CSD", sizeof("SD INIT:CMD9/CSD") - 1, csd, sizeof(csd));
-
 	// CRC bytes
 
 	uint8_t crc[2];
@@ -402,8 +382,6 @@ sd_status_t sd_init(void) {
 		return SD_ERR_SPI;
 	}
 
-	logger_log_hex_len("SD INIT:CMD9/CRC", sizeof("SD INIT:CMD9/CRC") - 1, crc, sizeof(crc));
-
 	sd_end_cmd();
 
 	// decode CSD data to get capacity and block count
@@ -413,11 +391,6 @@ sd_status_t sd_init(void) {
 		((uint32_t)(csd[7] & 0x3F) << 16) | ((uint32_t)csd[8] << 8) | (uint32_t)csd[9];
 
 	block_count = ((uint64_t)c_size + 1ULL) * 1024ULL;
-
-	logger_log_uint_len("SD INIT:BLOCK COUNT",
-		sizeof("SD INIT:BLOCK COUNT") - 1,
-		&block_count,
-		sizeof(block_count));
 
 	sd_initialized = 1;
 

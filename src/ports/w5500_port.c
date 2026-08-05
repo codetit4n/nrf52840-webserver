@@ -51,7 +51,7 @@ void w5500_cris_exit(void) {
 	xSemaphoreGive(w5500_mutex);
 }
 
-void w5500_init(void) {
+int8_t w5500_init(void) {
 	w5500_mutex = xSemaphoreCreateMutexStatic(&w5500_mutex_buf);
 	configASSERT(w5500_mutex);
 
@@ -78,5 +78,5 @@ void w5500_init(void) {
 
 	uint8_t txsize[8] = {2, 2, 2, 2, 2, 2, 2, 2};
 	uint8_t rxsize[8] = {2, 2, 2, 2, 2, 2, 2, 2};
-	wizchip_init(txsize, rxsize);
+	return wizchip_init(txsize, rxsize);
 }

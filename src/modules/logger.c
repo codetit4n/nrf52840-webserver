@@ -38,8 +38,9 @@ void logger_init(void) {
 		"logger_task",			 /* Name (for debug) */
 		256,				 /* Stack size (words, not bytes) */
 		NULL,				 /* Parameters */
-		1,				 /* Priority */
-		&logger_task_handle		 /* Task handle */
+		1, /* Priority  NOTE: Increase this if you want to see some important logs which are
+		      not logging*/
+		&logger_task_handle /* Task handle */
 	);
 
 	if (ok != pdPASS) {

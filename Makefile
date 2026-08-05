@@ -99,7 +99,8 @@ WIZNET_SRCS := \
 	$(WIZNET)/W5500/w5500.c
 
 FATFS_SRCS := \
-	$(FATFS)/ff.c
+	$(FATFS)/ff.c \
+	$(FATFS)/diskio.c
 
 SRCS := $(APP_SRCS) $(FREERTOS_SRCS) $(NRFX_SRCS) $(WIZNET_SRCS) $(FATFS_SRCS)
 OBJS := $(SRCS:%.c=$(BUILD)/%.o) $(STARTUP:%.S=$(BUILD)/%.o)

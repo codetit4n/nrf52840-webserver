@@ -19,10 +19,82 @@ static uint8_t http_resp[] = "HTTP/1.1 200 OK\r\n"
 			     "OK\n";
 
 static void log_sock_st(uint8_t sock, uint8_t st) {
-	// log sock id + status as 2 bytes: [sock, st]
+	const char* state = "UNKNOWN";
+	uint8_t state_len = (uint8_t)(sizeof("UNKNOWN") - 1);
+
+	switch (st) {
+	case SOCK_CLOSED:
+		state = "CLOSED";
+		state_len = (uint8_t)(sizeof("CLOSED") - 1);
+		break;
+
+	case SOCK_INIT:
+		state = "INIT";
+		state_len = (uint8_t)(sizeof("INIT") - 1);
+		break;
+
+	case SOCK_LISTEN:
+		state = "LISTEN";
+		state_len = (uint8_t)(sizeof("LISTEN") - 1);
+		break;
+
+	case SOCK_SYNSENT:
+		state = "SYN_SENT";
+		state_len = (uint8_t)(sizeof("SYN_SENT") - 1);
+		break;
+
+	case SOCK_SYNRECV:
+		state = "SYN_RECEIVED";
+		state_len = (uint8_t)(sizeof("SYN_RECEIVED") - 1);
+		break;
+
+	case SOCK_ESTABLISHED:
+		state = "ESTABLISHED";
+		state_len = (uint8_t)(sizeof("ESTABLISHED") - 1);
+		break;
+
+	case SOCK_FIN_WAIT:
+		state = "FIN_WAIT";
+		state_len = (uint8_t)(sizeof("FIN_WAIT") - 1);
+		break;
+
+	case SOCK_CLOSING:
+		state = "CLOSING";
+		state_len = (uint8_t)(sizeof("CLOSING") - 1);
+		break;
+
+	case SOCK_TIME_WAIT:
+		state = "TIME_WAIT";
+		state_len = (uint8_t)(sizeof("TIME_WAIT") - 1);
+		break;
+
+	case SOCK_CLOSE_WAIT:
+		state = "CLOSE_WAIT";
+		state_len = (uint8_t)(sizeof("CLOSE_WAIT") - 1);
+		break;
+
+	case SOCK_LAST_ACK:
+		state = "LAST_ACK";
+		state_len = (uint8_t)(sizeof("LAST_ACK") - 1);
+		break;
+	}
+
+	logger_log_literal_len("NET SOCK STATE:",
+		(uint8_t)(sizeof("NET SOCK STATE:") - 1),
+		state,
+		state_len);
+
+	if (st == SOCK_CLOSED || st == SOCK_INIT || st == SOCK_LISTEN || st == SOCK_SYNSENT ||
+		st == SOCK_SYNRECV || st == SOCK_ESTABLISHED || st == SOCK_FIN_WAIT ||
+		st == SOCK_CLOSING || st == SOCK_TIME_WAIT || st == SOCK_CLOSE_WAIT ||
+		st == SOCK_LAST_ACK) {
+		return;
+	}
+
 	uint8_t value[2] = {sock, st};
-	logger_log_hex_len("NET SOCK/STATE:",
-		(uint8_t)(sizeof("NET SOCK/STATE:") - 1),
+
+	logger_log_hex_len("NET SOCK UNKNOWN:",
+		(uint8_t)(sizeof("NET SOCK UNKNOWN:") - 1),
 		value,
 		(uint8_t)sizeof(value));
 }
@@ -165,8 +237,18 @@ static void net_task(void* arg) {
 	}
 }
 
-void net_init(void) {
-	w5500_init();
+int net_init(void) {
+
+	int8_t st = w5500_init();
+
+	if (st != 0) {
+		logger_log_literal_len("NET INIT:",
+			(uint8_t)(sizeof("NET INIT:") - 1),
+			"W5500 INIT FAIL",
+			(uint8_t)(sizeof("W5500 INIT FAIL") - 1));
+
+		return -1;
+	}
 
 	BaseType_t ok = xTaskCreate(net_task, /* Task function */
 		"net_task",		      /* Name (for debug) */
@@ -177,8 +259,13 @@ void net_init(void) {
 	);
 
 	if (ok != pdPASS) {
-		taskDISABLE_INTERRUPTS();
-		for (;;)
-			;
+		logger_log_literal_len("NET INIT:",
+			(uint8_t)(sizeof("NET INIT:") - 1),
+			"TASK CREATE FAIL",
+			(uint8_t)(sizeof("TASK CREATE FAIL") - 1));
+
+		return -1;
 	}
+
+	return 0;
 }
