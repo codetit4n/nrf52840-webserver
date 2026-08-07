@@ -1,6 +1,7 @@
 #include "modules/net.h"
 #include "FreeRTOS.h"
 #include "drivers/spi.h"
+#include "ff.h"
 #include "memutils.h"
 #include "modules/logger.h"
 #include "socket.h"
@@ -11,12 +12,9 @@ static const uint8_t http_socks[HTTP_SOCK_COUNT] = {0, 1, 2, 3};
 static uint8_t rx_buf[SPI_MAX_XFER];
 
 // hardcoded for now
-static uint8_t http_resp[] = "HTTP/1.1 200 OK\r\n"
-			     "Content-Type: text/plain\r\n"
-			     "Content-Length: 3\r\n"
-			     "Connection: close\r\n"
-			     "\r\n"
-			     "OK\n";
+static uint8_t http_headers[] = "HTTP/1.1 200 OK\r\n"
+				"Content-Type: text/html\r\n"
+				"\r\n";
 
 static void log_sock_st(uint8_t sock, uint8_t st) {
 	const char* state = "UNKNOWN";
@@ -134,59 +132,165 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 
 		TickType_t start_tick = xTaskGetTickCount();
 
-		uint8_t found_rx = 0;
+		size_t req_len = 0;
+		uint8_t req_fin = 0;
 
 		for (;;) {
-			if (getSn_SR(sock) != SOCK_ESTABLISHED) // state changed
-				break;				// exit
+			if (getSn_SR(sock) != SOCK_ESTABLISHED) // state changed - exit
+				break;
 
-			uint16_t avail = getSn_RX_RSR(sock); // some data received from client
+			uint16_t avail = getSn_RX_RSR(sock); // check for data received from client
 
-			if (avail > 0) {
-				// received something from the client
-				found_rx = 1;
-
-				// drain what's available - recv() advances W5500 RX read pointer.
-				int32_t n = recv(sock, rx_buf, sizeof(rx_buf));
-				if (n <= 0) {
-					// recv error - stop trying to read
+			if (avail == 0) {
+				if ((xTaskGetTickCount() - start_tick) >= REQUEST_TIMEOUT_TICKS) {
+					disconnect(sock);
 					break;
 				}
-
+				vTaskDelay(1);
 				continue;
 			}
 
-			// no data available at this moment
-			TickType_t now_tick = xTaskGetTickCount();
-
-			// If never saw any RX and timeout expired - disconnect - client is idle
-			if (!found_rx && (now_tick - start_tick) >= REQUEST_TIMEOUT_TICKS) {
+			if (req_len >= sizeof(rx_buf)) {
+				/* Req headers too large for the buffer*/
 				disconnect(sock);
 				break;
 			}
 
-			// If we already saw some RX, and now it's empty - request drained
-			if (found_rx) {
+			size_t remains = sizeof(rx_buf) - req_len;
+
+			int32_t n = recv(sock,
+				rx_buf + req_len, // append to the buffer
+				(uint16_t)remains);
+
+			if (n <= 0) {
 				break;
 			}
 
-			// Still waiting for first byte: yield - do not hammer getSn_RX_RSR()
-			vTaskDelay(1);
+			req_len += (size_t)n;
+
+			if (req_len >= 4) {
+				for (size_t i = 0; i <= req_len - 4; i++) {
+					if (mem_cmp(&rx_buf[i], (const uint8_t*)"\r\n\r\n", 4) ==
+						0) {
+						req_fin = 1;
+						break;
+					}
+				}
+			}
+
+			if (req_fin) {
+				break;
+			}
 		}
 
-		// If disconnected while waiting for data, skip sending response
-		if (getSn_SR(sock) == SOCK_ESTABLISHED) {
-			int32_t rc = send(sock, http_resp, (uint16_t)(sizeof(http_resp) - 1));
+		/* Socket disappeared while receiving */
+		if (getSn_SR(sock) != SOCK_ESTABLISHED) {
+			break;
+		}
 
-			if (rc < 0) {
+		/* Incomplete request */
+		if (!req_fin) {
+			disconnect(sock);
+			break;
+		}
+
+		if (req_len >= 6 && mem_cmp(rx_buf, (const uint8_t*)"GET / ", 6) == 0) {
+
+			FIL file = {0};
+
+			FRESULT fr = f_open(&file, "0:/INDEX.HTML", FA_READ);
+			if (fr != FR_OK) {
+				// TODO: send 500/404 depending on failure
+				disconnect(sock);
+				break;
+			}
+
+			// send http headers
+			int32_t sr = send(sock, http_headers, (uint16_t)(sizeof(http_headers) - 1));
+
+			if (sr < 0) {
 				logger_log_literal_len("NET:",
 					(uint8_t)(sizeof("NET:") - 1),
-					"send() FAIL",
-					(uint8_t)(sizeof("send() FAIL") - 1));
+					"headers send() FAIL",
+					(uint8_t)(sizeof("headers send() FAIL") - 1));
+				f_close(&file);
 				close(sock); // hard recovery
 				break;
 			}
-			// todo later: handle partial send()
+
+			// file streaming
+			uint8_t filedata[SPI_MAX_XFER];
+			UINT br = 0;
+			uint8_t failed = 0;
+
+			for (;;) {
+				fr = f_read(&file, filedata, sizeof(filedata), &br);
+				if (fr != FR_OK) {
+					failed = 1;
+					break;
+				}
+
+				if (br == 0) {
+					break; // EOF
+				}
+				int32_t sockmode = getSn_MR(sock);
+				logger_log_hex_len("NET: sockmode",
+					(uint8_t)(sizeof("NET: sockmode") - 1),
+					(uint8_t*)&sockmode,
+					(uint8_t)sizeof(sockmode));
+
+				sr = send(sock, filedata, (uint16_t)br);
+				if (sr < 0) {
+					logger_log_literal_len("NET:",
+						(uint8_t)(sizeof("NET:") - 1),
+						"streaming send() FAIL",
+						(uint8_t)(sizeof("streaming send() FAIL") - 1));
+
+					logger_log_hex_len("NET: sock, sr",
+						(uint8_t)(sizeof("NET: sock, sr") - 1),
+						(uint8_t*)&sock,
+						(uint8_t)sizeof(sock));
+					logger_log_hex_len("NET: sock, sr",
+						(uint8_t)(sizeof("NET: sock, sr") - 1),
+						(uint8_t*)&sr,
+						(uint8_t)sizeof(sr));
+					failed = 1;
+					break;
+				}
+
+				// TODO: Handle partial send
+			}
+			f_close(&file);
+
+			if (failed) {
+				close(sock);
+				break;
+			}
+
+			disconnect(sock);
+		} else {
+			// 404
+			uint8_t http_404[] =
+				"HTTP/1.1 404 Not Found\r\n"
+				"Content-Type: text/html\r\n"
+				"Connection: close\r\n"
+				"\r\n"
+				"<!DOCTYPE html>"
+				"<html><head><title>404 Not Found</title></head>"
+				"<body><h1>404 Not Found</h1>"
+				"<p>The requested resource could not be found on this server.</p>"
+				"</body></html>";
+
+			int32_t sr = send(sock, http_404, (uint16_t)(sizeof(http_404) - 1));
+
+			if (sr < 0) {
+				logger_log_literal_len("NET:",
+					(uint8_t)(sizeof("NET:") - 1),
+					"404 send() FAIL",
+					(uint8_t)(sizeof("404 send() FAIL") - 1));
+				close(sock); // hard recovery
+				break;
+			}
 
 			disconnect(sock);
 		}

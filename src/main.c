@@ -2,15 +2,14 @@
 #include "board.h"
 #include "drivers/sd.h"
 #include "drivers/spi.h"
+#include "ff.h"
 #include "modules/logger.h"
 #include "modules/net.h"
 #include "task.h"
+
 #define SD_INIT_MAX_ATTEMPTS 3
 
-#include "ff.h"
-
 static FATFS fs;
-static FIL file;
 
 // Scheduler dependent initialization
 static void startup_task(void* arg) {
@@ -62,35 +61,6 @@ static void startup_task(void* arg) {
 				(uint8_t)(sizeof("SD MOUNT:") - 1),
 				"DONE",
 				(uint8_t)(sizeof("DONE") - 1));
-
-			char buffer[64];
-			UINT bytes_read;
-
-			FRESULT fr = f_open(&file, "0:/TEST.TXT", FA_READ);
-			if (fr != FR_OK) {
-				logger_log_literal_len("SD FILE OPEN:",
-					(uint8_t)(sizeof("SD FILE OPEN:") - 1),
-					"FAILED",
-					(uint8_t)(sizeof("FAILED") - 1));
-			}
-
-			fr = f_read(&file, buffer, sizeof(buffer) - 1, &bytes_read);
-			if (fr != FR_OK) {
-				logger_log_literal_len("SD FILE READ:",
-					(uint8_t)(sizeof("SD FILE READ:") - 1),
-					"FAILED",
-					(uint8_t)(sizeof("FAILED") - 1));
-
-				f_close(&file);
-			}
-
-			buffer[bytes_read] = '\0';
-			f_close(&file);
-
-			logger_log_literal_len("SD FILE CONTENTS:",
-				(uint8_t)(sizeof("SD FILE CONTENTS:") - 1),
-				buffer,
-				(uint8_t)bytes_read);
 		}
 	}
 

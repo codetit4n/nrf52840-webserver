@@ -100,7 +100,8 @@ WIZNET_SRCS := \
 
 FATFS_SRCS := \
 	$(FATFS)/ff.c \
-	$(FATFS)/diskio.c
+	$(FATFS)/diskio.c \
+	$(FATFS)/ffunicode.c
 
 SRCS := $(APP_SRCS) $(FREERTOS_SRCS) $(NRFX_SRCS) $(WIZNET_SRCS) $(FATFS_SRCS)
 OBJS := $(SRCS:%.c=$(BUILD)/%.o) $(STARTUP:%.S=$(BUILD)/%.o)
