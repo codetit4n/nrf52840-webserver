@@ -12,9 +12,190 @@ static const uint8_t http_socks[HTTP_SOCK_COUNT] = {0, 1, 2, 3};
 static uint8_t rx_buf[SPI_MAX_XFER];
 
 // hardcoded for now
+// static uint8_t http_headers[] = "HTTP/1.1 200 OK\r\n"
+//				"Content-Type: text/html\r\n"
+//				"\r\n";
+
 static uint8_t http_headers[] = "HTTP/1.1 200 OK\r\n"
-				"Content-Type: text/html\r\n"
+				"Content-Type: text/plain\r\n"
+				"Connection: close\r\n"
 				"\r\n";
+
+static uint8_t http_404[] = "HTTP/1.1 404 Not Found\r\n"
+			    "Content-Type: text/html\r\n"
+			    "Connection: close\r\n"
+			    "\r\n"
+			    "<!DOCTYPE html>"
+			    "<html><head><title>404 Not Found</title></head>"
+			    "<body><h1>404 Not Found</h1>"
+			    "<p>The requested resource could not be found on this server.</p>"
+			    "</body></html>";
+
+static const uint8_t lorem[] =
+	"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin sodales varius sem quis "
+	"porta. "
+	"Sed tristique mollis molestie. Integer efficitur feugiat massa ac bibendum. Morbi ut urna "
+	"et nisl "
+	"dignissim ornare. Donec id pharetra lectus, sit amet mattis eros. Etiam nec sem nec orci "
+	"sollicitudin viverra. Nam vitae varius ex, tristique cursus massa.\n"
+	"Morbi et urna id magna bibendum sagittis. Donec non est eu massa lacinia convallis. Cras "
+	"elementum "
+	"venenatis libero, non lacinia enim luctus nec. Proin eget egestas velit. Vivamus in "
+	"gravida ligula, "
+	"sit amet euismod nulla. Ut placerat, lectus eu semper varius, mauris orci venenatis est, "
+	"sed "
+	"efficitur nisi sem ut libero. Aenean eleifend orci lacus, vitae accumsan nisi ullamcorper "
+	"sit amet.\n"
+	"Vivamus nec facilisis ex. Nullam in odio vitae nisi consectetur elementum. Maecenas eu "
+	"dui hendrerit, "
+	"vehicula elit ut, volutpat ipsum. Sed semper, enim at rhoncus semper, felis ligula "
+	"aliquam nisl, et "
+	"lobortis dolor erat non sapien. Proin eu leo elit. In et leo nunc. Vestibulum id turpis "
+	"vel metus "
+	"iaculis rutrum a eu lorem. Ut non laoreet purus. Donec semper turpis mauris, quis "
+	"volutpat turpis "
+	"elementum a.\n"
+	"Ut ante dolor, porttitor et dignissim et, pulvinar in metus. Nunc porta dignissim justo, "
+	"in tempor mi "
+	"vestibulum rhoncus. Cras pulvinar neque ac dolor efficitur, nec laoreet risus vulputate. "
+	"Sed posuere "
+	"quis est quis pharetra. Sed vel semper dui. Mauris et varius libero. Etiam a bibendum "
+	"magna. Aliquam "
+	"luctus vel lorem sit amet ornare. Nullam luctus justo interdum nisi rhoncus, quis feugiat "
+	"augue mollis. "
+	"Donec ipsum ex, condimentum nec volutpat eu, bibendum vitae libero. Ut efficitur ante vel "
+	"urna commodo, "
+	"quis ultricies neque molestie. Vestibulum pellentesque mattis hendrerit. Nulla quis nisi "
+	"neque. Nullam "
+	"lacinia gravida semper. Donec ultricies risus nibh, ut aliquet turpis pulvinar vel. "
+	"Quisque sit amet "
+	"varius massa, ac ultrices est.\n"
+	"Nullam posuere lobortis diam ac auctor. Vivamus molestie dolor diam, eget auctor turpis "
+	"scelerisque ac. "
+	"Nunc elementum dui hendrerit felis mattis, et ultrices neque ultricies. Nam sit amet "
+	"turpis interdum, "
+	"porttitor magna sed, venenatis est. Curabitur orci dolor, tempus id porta at, aliquet "
+	"eget mi. Aenean "
+	"fermentum purus cursus odio sollicitudin rhoncus. Suspendisse nec mi et turpis semper "
+	"facilisis. Aenean "
+	"lobortis tempor tortor sed sodales. Orci varius natoque penatibus et magnis dis "
+	"parturient montes, "
+	"nascetur ridiculus mus. Etiam nec iaculis felis. Donec erat libero, auctor vel dolor sit "
+	"amet, ultrices "
+	"sodales ligula. Sed malesuada tincidunt sem sed aliquam. Vivamus sed ligula ut dolor "
+	"pulvinar eleifend. "
+	"Proin vehicula quis quam at aliquet. Vestibulum eleifend neque quis dolor tempus, "
+	"ultrices hendrerit "
+	"arcu rhoncus.\n"
+	"Ut eu odio commodo, bibendum orci vel, hendrerit arcu. Etiam et erat elit. Aliquam "
+	"efficitur varius "
+	"lacus sit amet dictum. Cras tincidunt orci lacus, at sodales dolor dapibus id. "
+	"Pellentesque congue "
+	"fermentum dolor. Pellentesque tincidunt egestas pulvinar. Sed a luctus tortor, vel "
+	"sodales nunc.\n"
+	"Etiam eleifend et ipsum in aliquam. Sed pretium posuere lacus et pellentesque. Vivamus "
+	"mattis consequat "
+	"vulputate. Proin ultrices diam id risus maximus feugiat. Integer hendrerit arcu leo, eget "
+	"finibus neque "
+	"sodales luctus. Suspendisse dapibus sed lacus a viverra. Aliquam elementum turpis "
+	"condimentum risus "
+	"efficitur convallis. Etiam consectetur venenatis rutrum. Orci varius natoque penatibus et "
+	"magnis dis "
+	"parturient montes, nascetur ridiculus mus. Sed placerat eleifend libero, et tempus velit "
+	"mattis non. "
+	"Etiam consequat ligula eros, aliquam iaculis erat aliquet vel. Morbi ac augue id leo "
+	"feugiat maximus "
+	"quis et lacus. Donec at mauris in dui faucibus viverra. Morbi blandit sed mi sit amet "
+	"ornare. Praesent "
+	"dui tellus, sollicitudin ac vestibulum id, malesuada ac neque.\n"
+	"Nulla consectetur orci tellus, ac maximus est feugiat sed. Nullam interdum in massa eu "
+	"tempor. Proin "
+	"posuere massa id dolor feugiat, eget lacinia magna accumsan. Maecenas sit amet ornare "
+	"ipsum. Ut vitae "
+	"neque libero. Aenean at eros sed enim interdum imperdiet eget sit amet erat. Praesent "
+	"placerat.\n"
+	"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin sodales varius sem quis "
+	"porta. "
+	"Sed tristique mollis molestie. Integer efficitur feugiat massa ac bibendum. Morbi ut urna "
+	"et nisl "
+	"dignissim ornare. Donec id pharetra lectus, sit amet mattis eros. Etiam nec sem nec orci "
+	"sollicitudin viverra. Nam vitae varius ex, tristique cursus massa.\n"
+	"Morbi et urna id magna bibendum sagittis. Donec non est eu massa lacinia convallis. Cras "
+	"elementum "
+	"venenatis libero, non lacinia enim luctus nec. Proin eget egestas velit. Vivamus in "
+	"gravida ligula, "
+	"sit amet euismod nulla. Ut placerat, lectus eu semper varius, mauris orci venenatis est, "
+	"sed "
+	"efficitur nisi sem ut libero. Aenean eleifend orci lacus, vitae accumsan nisi ullamcorper "
+	"sit amet.\n"
+	"Vivamus nec facilisis ex. Nullam in odio vitae nisi consectetur elementum. Maecenas eu "
+	"dui hendrerit, "
+	"vehicula elit ut, volutpat ipsum. Sed semper, enim at rhoncus semper, felis ligula "
+	"aliquam nisl, et "
+	"lobortis dolor erat non sapien. Proin eu leo elit. In et leo nunc. Vestibulum id turpis "
+	"vel metus "
+	"iaculis rutrum a eu lorem. Ut non laoreet purus. Donec semper turpis mauris, quis "
+	"volutpat turpis "
+	"elementum a.\n"
+	"Ut ante dolor, porttitor et dignissim et, pulvinar in metus. Nunc porta dignissim justo, "
+	"in tempor mi "
+	"vestibulum rhoncus. Cras pulvinar neque ac dolor efficitur, nec laoreet risus vulputate. "
+	"Sed posuere "
+	"quis est quis pharetra. Sed vel semper dui. Mauris et varius libero. Etiam a bibendum "
+	"magna. Aliquam "
+	"luctus vel lorem sit amet ornare. Nullam luctus justo interdum nisi rhoncus, quis feugiat "
+	"augue mollis. "
+	"Donec ipsum ex, condimentum nec volutpat eu, bibendum vitae libero. Ut efficitur ante vel "
+	"urna commodo, "
+	"quis ultricies neque molestie. Vestibulum pellentesque mattis hendrerit. Nulla quis nisi "
+	"neque. Nullam "
+	"lacinia gravida semper. Donec ultricies risus nibh, ut aliquet turpis pulvinar vel. "
+	"Quisque sit amet "
+	"varius massa, ac ultrices est.\n"
+	"Nullam posuere lobortis diam ac auctor. Vivamus molestie dolor diam, eget auctor turpis "
+	"scelerisque ac. "
+	"Nunc elementum dui hendrerit felis mattis, et ultrices neque ultricies. Nam sit amet "
+	"turpis interdum, "
+	"porttitor magna sed, venenatis est. Curabitur orci dolor, tempus id porta at, aliquet "
+	"eget mi. Aenean "
+	"fermentum purus cursus odio sollicitudin rhoncus. Suspendisse nec mi et turpis semper "
+	"facilisis. Aenean "
+	"lobortis tempor tortor sed sodales. Orci varius natoque penatibus et magnis dis "
+	"parturient montes, "
+	"nascetur ridiculus mus. Etiam nec iaculis felis. Donec erat libero, auctor vel dolor sit "
+	"amet, ultrices "
+	"sodales ligula. Sed malesuada tincidunt sem sed aliquam. Vivamus sed ligula ut dolor "
+	"pulvinar eleifend. "
+	"Proin vehicula quis quam at aliquet. Vestibulum eleifend neque quis dolor tempus, "
+	"ultrices hendrerit "
+	"arcu rhoncus.\n"
+	"Ut eu odio commodo, bibendum orci vel, hendrerit arcu. Etiam et erat elit. Aliquam "
+	"efficitur varius "
+	"lacus sit amet dictum. Cras tincidunt orci lacus, at sodales dolor dapibus id. "
+	"Pellentesque congue "
+	"fermentum dolor. Pellentesque tincidunt egestas pulvinar. Sed a luctus tortor, vel "
+	"sodales nunc.\n"
+	"Etiam eleifend et ipsum in aliquam. Sed pretium posuere lacus et pellentesque. Vivamus "
+	"mattis consequat "
+	"vulputate. Proin ultrices diam id risus maximus feugiat. Integer hendrerit arcu leo, eget "
+	"finibus neque "
+	"sodales luctus. Suspendisse dapibus sed lacus a viverra. Aliquam elementum turpis "
+	"condimentum risus "
+	"efficitur convallis. Etiam consectetur venenatis rutrum. Orci varius natoque penatibus et "
+	"magnis dis "
+	"parturient montes, nascetur ridiculus mus. Sed placerat eleifend libero, et tempus velit "
+	"mattis non. "
+	"Etiam consequat ligula eros, aliquam iaculis erat aliquet vel. Morbi ac augue id leo "
+	"feugiat maximus "
+	"quis et lacus. Donec at mauris in dui faucibus viverra. Morbi blandit sed mi sit amet "
+	"ornare. Praesent "
+	"dui tellus, sollicitudin ac vestibulum id, malesuada ac neque.\n"
+	"Nulla consectetur orci tellus, ac maximus est feugiat sed. Nullam interdum in massa eu "
+	"tempor. Proin "
+	"posuere massa id dolor feugiat, eget lacinia magna accumsan. Maecenas sit amet ornare "
+	"ipsum. Ut vitae "
+	"neque libero. Aenean at eros sed enim interdum imperdiet eget sit amet erat. Praesent "
+	"placerat.";
 
 static void log_sock_st(uint8_t sock, uint8_t st) {
 	const char* state = "UNKNOWN";
@@ -143,6 +324,11 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 
 			if (avail == 0) {
 				if ((xTaskGetTickCount() - start_tick) >= REQUEST_TIMEOUT_TICKS) {
+					logger_log_literal_len("NET:",
+						(uint8_t)(sizeof("NET:") - 1),
+						"request timeout",
+						(uint8_t)(sizeof("request timeout") - 1));
+
 					disconnect(sock);
 					break;
 				}
@@ -199,8 +385,24 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 			FIL file = {0};
 
 			FRESULT fr = f_open(&file, "0:/INDEX.HTML", FA_READ);
+			if (fr == FR_NO_FILE || fr == FR_NO_PATH) {
+				// 404
+				int32_t sr = send(sock, http_404, (uint16_t)(sizeof(http_404) - 1));
+				if (sr < 0) {
+					logger_log_literal_len("NET:",
+						(uint8_t)(sizeof("NET:") - 1),
+						"404 send() FAIL",
+						(uint8_t)(sizeof("404 send() FAIL") - 1));
+					close(sock); // hard recovery
+					break;
+				}
+
+				disconnect(sock);
+				break;
+			}
+
 			if (fr != FR_OK) {
-				// TODO: send 500/404 depending on failure
+				/* Other filesystem/storage error */
 				disconnect(sock);
 				break;
 			}
@@ -218,49 +420,93 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 				break;
 			}
 
-			// file streaming
-			uint8_t filedata[SPI_MAX_XFER];
-			UINT br = 0;
+			// tmp
+			size_t total = sizeof(lorem) - 1;
+			size_t sent = 0;
 			uint8_t failed = 0;
+			uint32_t chunk_no = 0;
 
-			for (;;) {
-				fr = f_read(&file, filedata, sizeof(filedata), &br);
-				if (fr != FR_OK) {
-					failed = 1;
-					break;
-				}
+			while (sent < total) {
+				size_t remaining = total - sent;
+				uint16_t chunk =
+					(uint16_t)((remaining > SPI_MAX_XFER) ? SPI_MAX_XFER
+									      : remaining);
 
-				if (br == 0) {
-					break; // EOF
-				}
-				int32_t sockmode = getSn_MR(sock);
-				logger_log_hex_len("NET: sockmode",
-					(uint8_t)(sizeof("NET: sockmode") - 1),
-					(uint8_t*)&sockmode,
-					(uint8_t)sizeof(sockmode));
+				chunk_no++;
 
-				sr = send(sock, filedata, (uint16_t)br);
+				logger_log_uint_len("NET: chunk #",
+					(uint8_t)(sizeof("NET: chunk #") - 1),
+					&chunk_no,
+					(uint8_t)sizeof(chunk_no));
+
+				sr = send(sock, lorem + sent, chunk);
+
 				if (sr < 0) {
 					logger_log_literal_len("NET:",
 						(uint8_t)(sizeof("NET:") - 1),
 						"streaming send() FAIL",
 						(uint8_t)(sizeof("streaming send() FAIL") - 1));
 
-					logger_log_hex_len("NET: sock, sr",
-						(uint8_t)(sizeof("NET: sock, sr") - 1),
+					logger_log_hex_len("NET: sock",
+						(uint8_t)(sizeof("NET: sock") - 1),
 						(uint8_t*)&sock,
 						(uint8_t)sizeof(sock));
-					logger_log_hex_len("NET: sock, sr",
-						(uint8_t)(sizeof("NET: sock, sr") - 1),
+
+					logger_log_hex_len("NET: sr",
+						(uint8_t)(sizeof("NET: sr") - 1),
 						(uint8_t*)&sr,
 						(uint8_t)sizeof(sr));
+
 					failed = 1;
 					break;
 				}
 
-				// TODO: Handle partial send
+				sent += (size_t)sr;
 			}
-			f_close(&file);
+
+			// file streaming
+			//			uint8_t filedata[SPI_MAX_XFER];
+			//			UINT br = 0;
+			//			uint8_t failed = 0;
+
+			//			for (;;) {
+			//				// fr = f_read(&file, filedata,
+			// sizeof(filedata), &br);
+			//				// if (fr != FR_OK) {
+			//				//	failed = 1;
+			//				//	break;
+			//				// }
+			//
+			//				// if (br == 0) {
+			//				//	break; // EOF
+			//				// }
+			//				int32_t sockmode = getSn_MR(sock);
+			//				logger_log_hex_len("NET: sockmode",
+			//					(uint8_t)(sizeof("NET: sockmode") -
+			// 1), 					(uint8_t*)&sockmode,
+			// (uint8_t)sizeof(sockmode));
+			//
+			//				sr = send(sock, filedata, (uint16_t)br);
+			//				if (sr < 0) {
+			//					logger_log_literal_len("NET:",
+			//						(uint8_t)(sizeof("NET:") -
+			// 1), 						"streaming send() FAIL",
+			// (uint8_t)(sizeof("streaming send() FAIL") - 1));
+			//
+			//					logger_log_hex_len("NET: sock, sr",
+			//						(uint8_t)(sizeof("NET: sock,
+			// sr") - 1), 						(uint8_t*)&sock,
+			// (uint8_t)sizeof(sock));
+			// logger_log_hex_len("NET: sock, sr",
+			//						(uint8_t)(sizeof("NET: sock,
+			// sr") - 1), 						(uint8_t*)&sr,
+			// (uint8_t)sizeof(sr)); 					failed = 1;
+			// break;
+			//				}
+			//
+			//				// TODO: Handle partial send
+			//			}
+			//			f_close(&file);
 
 			if (failed) {
 				close(sock);
@@ -270,16 +516,6 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 			disconnect(sock);
 		} else {
 			// 404
-			uint8_t http_404[] =
-				"HTTP/1.1 404 Not Found\r\n"
-				"Content-Type: text/html\r\n"
-				"Connection: close\r\n"
-				"\r\n"
-				"<!DOCTYPE html>"
-				"<html><head><title>404 Not Found</title></head>"
-				"<body><h1>404 Not Found</h1>"
-				"<p>The requested resource could not be found on this server.</p>"
-				"</body></html>";
 
 			int32_t sr = send(sock, http_404, (uint16_t)(sizeof(http_404) - 1));
 
