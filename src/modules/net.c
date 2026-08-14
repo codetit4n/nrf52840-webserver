@@ -4,8 +4,12 @@
 #include "ff.h"
 #include "memutils.h"
 #include "modules/logger.h"
+#include "projdefs.h"
 #include "socket.h"
 #include "task.h"
+#include "w5500.h"
+
+#define REQUEST_PROCESS_TIMEOUT_TICKS pdMS_TO_TICKS(5000)
 
 static const uint8_t http_socks[HTTP_SOCK_COUNT] = {0, 1, 2, 3};
 
@@ -258,10 +262,11 @@ static void log_sock_st(uint8_t sock, uint8_t st) {
 		break;
 	}
 
-	logger_log_literal_len("NET SOCK STATE:",
-		(uint8_t)(sizeof("NET SOCK STATE:") - 1),
-		state,
-		state_len);
+	size_t sock_label_str_len = sizeof("NET SOCK 0: ") - 1;
+	char sock_label_str[] = {'N', 'E', 'T', ' ', 'S', 'O', 'C', 'K', ' ', '0', ':', ' ', '\0'};
+	sock_label_str[9] = (uint8_t)('0' + sock);
+
+	logger_log_literal_len(sock_label_str, (uint8_t)sock_label_str_len, state, state_len);
 
 	if (st == SOCK_CLOSED || st == SOCK_INIT || st == SOCK_LISTEN || st == SOCK_SYNSENT ||
 		st == SOCK_SYNRECV || st == SOCK_ESTABLISHED || st == SOCK_FIN_WAIT ||
@@ -271,11 +276,12 @@ static void log_sock_st(uint8_t sock, uint8_t st) {
 	}
 
 	uint8_t value[2] = {sock, st};
-
-	logger_log_hex_len("NET SOCK UNKNOWN:",
-		(uint8_t)(sizeof("NET SOCK UNKNOWN:") - 1),
-		value,
-		(uint8_t)sizeof(value));
+	logger_log_literal_len(sock_label_str,
+		(uint8_t)sock_label_str_len,
+		"UNKNOWN STATE",
+		(uint8_t)(sizeof("UNKNOWN STATE") - 1));
+	logger_log_hex_len(sock_label_str, (uint8_t)sock_label_str_len, value, sizeof(value));
+	logger_log_hex_len(sock_label_str, (uint8_t)sock_label_str_len, value, sizeof(value));
 }
 
 static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
@@ -379,6 +385,7 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 			disconnect(sock);
 			break;
 		}
+		TickType_t process_start = xTaskGetTickCount();
 
 		if (req_len >= 6 && mem_cmp(rx_buf, (const uint8_t*)"GET / ", 6) == 0) {
 
@@ -411,102 +418,96 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 			int32_t sr = send(sock, http_headers, (uint16_t)(sizeof(http_headers) - 1));
 
 			if (sr < 0) {
-				logger_log_literal_len("NET:",
-					(uint8_t)(sizeof("NET:") - 1),
-					"headers send() FAIL",
-					(uint8_t)(sizeof("headers send() FAIL") - 1));
+				logger_log_hex_len("NET:HEADERS SEND SR:",
+					(uint8_t)(sizeof("NET:HEADERS SEND SR:") - 1),
+					(uint8_t*)&sr,
+					sizeof(sr));
 				f_close(&file);
 				close(sock); // hard recovery
 				break;
 			}
 
 			// tmp
-			size_t total = sizeof(lorem) - 1;
-			size_t sent = 0;
+			// size_t total = sizeof(lorem) - 1;
+			// size_t sent = 0;
+			// uint8_t failed = 0;
+
+			// while (sent < total) {
+			//	size_t remaining = total - sent;
+			//	uint16_t chunk =
+			//		(uint16_t)((remaining > SPI_MAX_XFER) ? SPI_MAX_XFER
+			//						      : remaining);
+
+			//	sr = send(sock, lorem + sent, chunk);
+
+			//	if (sr < 0) {
+			//		failed = 1;
+			//		break;
+			//	}
+
+			//	sent += (size_t)sr;
+			//}
+
+			// file streaming
+			uint8_t filedata[SPI_MAX_XFER] = {0};
+			UINT br = 0;
 			uint8_t failed = 0;
-			uint32_t chunk_no = 0;
 
-			while (sent < total) {
-				size_t remaining = total - sent;
-				uint16_t chunk =
-					(uint16_t)((remaining > SPI_MAX_XFER) ? SPI_MAX_XFER
-									      : remaining);
+			uint8_t mr = getSn_MR(sock);
+			logger_log_hex_len("NET:SOCK MR(bef):",
+				(uint8_t)(sizeof("NET:SOCK MR(bef):") - 1),
+				&mr,
+				sizeof(mr));
 
-				chunk_no++;
+			for (;;) {
 
-				logger_log_uint_len("NET: chunk #",
-					(uint8_t)(sizeof("NET: chunk #") - 1),
-					&chunk_no,
-					(uint8_t)sizeof(chunk_no));
-
-				sr = send(sock, lorem + sent, chunk);
-
-				if (sr < 0) {
+				if ((xTaskGetTickCount() - process_start) >=
+					REQUEST_PROCESS_TIMEOUT_TICKS) {
 					logger_log_literal_len("NET:",
 						(uint8_t)(sizeof("NET:") - 1),
-						"streaming send() FAIL",
-						(uint8_t)(sizeof("streaming send() FAIL") - 1));
-
-					logger_log_hex_len("NET: sock",
-						(uint8_t)(sizeof("NET: sock") - 1),
-						(uint8_t*)&sock,
-						(uint8_t)sizeof(sock));
-
-					logger_log_hex_len("NET: sr",
-						(uint8_t)(sizeof("NET: sr") - 1),
-						(uint8_t*)&sr,
-						(uint8_t)sizeof(sr));
+						"processing timeout",
+						(uint8_t)(sizeof("processing timeout") - 1));
 
 					failed = 1;
 					break;
 				}
+				fr = f_read(&file, &filedata, sizeof(filedata), &br);
+				if (fr != FR_OK) {
+					failed = 1;
+					break;
+				}
 
-				sent += (size_t)sr;
+				vTaskDelay(pdMS_TO_TICKS(50));
+
+				mr = getSn_MR(sock);
+				logger_log_hex_len("NET:SOCK MR(aft):",
+					(uint8_t)(sizeof("NET:SOCK MR(aft):") - 1),
+					&mr,
+					sizeof(mr));
+
+				if (br == 0) {
+					break; // EOF
+				}
+
+				// log the content of the file chunk being sent
+				logger_log_literal_len("NET:FILE CHUNK:",
+					(uint8_t)(sizeof("NET:FILE CHUNK:") - 1),
+					(const char*)filedata,
+					(uint8_t)br);
+				sr = send(sock, filedata, (uint16_t)br);
+
+				logger_log_int_len("NET:SEND SR:",
+					(uint8_t)(sizeof("NET:SEND SR:") - 1),
+					&sr,
+					sizeof(sr));
+				if (sr < 0) {
+					failed = 1;
+					break;
+				}
+
+				// TODO: Handle partial send
 			}
-
-			// file streaming
-			//			uint8_t filedata[SPI_MAX_XFER];
-			//			UINT br = 0;
-			//			uint8_t failed = 0;
-
-			//			for (;;) {
-			//				// fr = f_read(&file, filedata,
-			// sizeof(filedata), &br);
-			//				// if (fr != FR_OK) {
-			//				//	failed = 1;
-			//				//	break;
-			//				// }
-			//
-			//				// if (br == 0) {
-			//				//	break; // EOF
-			//				// }
-			//				int32_t sockmode = getSn_MR(sock);
-			//				logger_log_hex_len("NET: sockmode",
-			//					(uint8_t)(sizeof("NET: sockmode") -
-			// 1), 					(uint8_t*)&sockmode,
-			// (uint8_t)sizeof(sockmode));
-			//
-			//				sr = send(sock, filedata, (uint16_t)br);
-			//				if (sr < 0) {
-			//					logger_log_literal_len("NET:",
-			//						(uint8_t)(sizeof("NET:") -
-			// 1), 						"streaming send() FAIL",
-			// (uint8_t)(sizeof("streaming send() FAIL") - 1));
-			//
-			//					logger_log_hex_len("NET: sock, sr",
-			//						(uint8_t)(sizeof("NET: sock,
-			// sr") - 1), 						(uint8_t*)&sock,
-			// (uint8_t)sizeof(sock));
-			// logger_log_hex_len("NET: sock, sr",
-			//						(uint8_t)(sizeof("NET: sock,
-			// sr") - 1), 						(uint8_t*)&sr,
-			// (uint8_t)sizeof(sr)); 					failed = 1;
-			// break;
-			//				}
-			//
-			//				// TODO: Handle partial send
-			//			}
-			//			f_close(&file);
+			f_close(&file);
 
 			if (failed) {
 				close(sock);
@@ -514,6 +515,7 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 			}
 
 			disconnect(sock);
+			break;
 		} else {
 			// 404
 

@@ -10,6 +10,7 @@
 typedef enum {
 	LOG_HEX,
 	LOG_UINT,
+	LOG_INT,
 	LOG_STRING,
 } payload_t;
 
@@ -32,6 +33,7 @@ void logger_log_uint_len(const char* label,
 	uint8_t label_len,
 	const void* value,
 	uint8_t value_len);
+void logger_log_int_len(const char* label, uint8_t label_len, const void* value, uint8_t value_len);
 void logger_log_hex_len(const char* label,
 	uint8_t label_len,
 	const uint8_t* data,

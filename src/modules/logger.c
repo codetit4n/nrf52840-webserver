@@ -143,6 +143,44 @@ static uint8_t format_u32(uint32_t value, uint8_t* out) {
 	return n; // actual length
 }
 
+// Converts int32_t to ASCII decimal, returns length.
+static uint8_t format_i32(int32_t value, uint8_t* out) {
+
+	uint8_t tmp[10];
+	uint8_t n = 0;
+	uint8_t pos = 0;
+
+	if (out == NULL)
+		return 0;
+
+	if (value == 0) {
+		out[0] = (uint8_t)'0';
+		return 1;
+	}
+
+	uint32_t magnitude;
+
+	if (value < 0) {
+		out[pos++] = (uint8_t)'-';
+
+		magnitude = (uint32_t)(-(int64_t)value);
+	} else {
+		magnitude = (uint32_t)value;
+	}
+
+	while (magnitude != 0 && n < sizeof(tmp)) {
+		uint32_t digit = magnitude % 10u;
+		tmp[n++] = (uint8_t)('0' + digit);
+		magnitude /= 10u;
+	}
+
+	for (uint8_t i = 0; i < n; i++) {
+		out[pos + i] = tmp[n - 1 - i];
+	}
+
+	return pos + n;
+}
+
 // Converts byte array to ascii hex, returns length.
 static uint8_t format_hex_bytes(const uint8_t* in, size_t in_len, uint8_t* out) {
 	if (in == NULL || out == NULL) {
@@ -201,6 +239,15 @@ void logger_task(void* arg) {
 				mem_cpy(&value, log.payload, sizeof(value));
 
 				line_len += format_u32(value, &line[line_len]);
+				break;
+			}
+
+			case LOG_INT: {
+
+				int32_t value = 0;
+				mem_cpy(&value, log.payload, sizeof(value));
+
+				line_len += format_i32(value, &line[line_len]);
 				break;
 			}
 
@@ -274,6 +321,32 @@ void logger_log_uint_len(const char* label,
 	uint8_t value_len) {
 	log_t l = {0};
 	l.type = LOG_UINT;
+
+	if (label_len > LOGGER_MAX_LOG_LABEL)
+		label_len = LOGGER_MAX_LOG_LABEL;
+
+	if (value_len > LOGGER_MAX_LOG_PAYLOAD)
+		value_len = LOGGER_MAX_LOG_PAYLOAD;
+
+	if (label && label_len)
+		mem_cpy(l.label, label, label_len);
+
+	if (value && value_len) {
+		mem_cpy(l.payload, value, value_len);
+		l.len = value_len;
+	} else {
+		l.len = 0;
+	}
+
+	logger_log(l);
+}
+
+void logger_log_int_len(const char* label,
+	uint8_t label_len,
+	const void* value,
+	uint8_t value_len) {
+	log_t l = {0};
+	l.type = LOG_INT;
 
 	if (label_len > LOGGER_MAX_LOG_LABEL)
 		label_len = LOGGER_MAX_LOG_LABEL;

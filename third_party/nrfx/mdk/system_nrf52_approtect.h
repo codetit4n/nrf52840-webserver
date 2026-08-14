@@ -30,32 +30,28 @@ NOTICE: This file has been modified by Nordic Semiconductor ASA.
 extern "C" {
 #endif
 
+/* Function that handles firmware-driven enabling or disabling of APPROTECT on devices where it is
+   supported. If ENABLE_APPROTECT is defined, the FW will lock the fw branch of the APPROTECT
+   mechanism, preventing it from being opened. Otherwise, the fw branch state is loaded from UICR,
+   emulating the legacy APPROTECT behavior.
 
-/* Function that handles firmware-driven enabling or disabling of APPROTECT on devices where it is supported.
-        If ENABLE_APPROTECT is defined, the FW will lock the fw branch of the APPROTECT mechanism,
-                            preventing it from being opened.
-        Otherwise, the fw branch state is loaded from UICR, emulating the legacy APPROTECT behavior.
-
-         The same mechanism is implemented for SECURE APPROTECT, with the macros
-         ENABLE_SECURE_APPROTECT and ENABLE_SECURE_APPROTECT_USER_HANDLING. */
-static inline void nrf52_handle_approtect(void)
-{
-    #if NRF52_ERRATA_249_PRESENT
-        #if defined (ENABLE_APPROTECT)
-            if (nrf52_errata_249())
-            {
-                /* Prevent processor from unlocking APPROTECT soft branch after this point. */
-                NRF_APPROTECT->FORCEPROTECT = APPROTECT_FORCEPROTECT_FORCEPROTECT_Force;
-            }
-        #else
-            if (nrf52_errata_249())
-            {
-                /* Load APPROTECT soft branch from UICR.
-                   If UICR->APPROTECT is disabled, POWER->APPROTECT will be disabled. */
-                NRF_APPROTECT->DISABLE = NRF_UICR->APPROTECT;
-            }
-        #endif
-    #endif
+	 The same mechanism is implemented for SECURE APPROTECT, with the macros
+	 ENABLE_SECURE_APPROTECT and ENABLE_SECURE_APPROTECT_USER_HANDLING. */
+static inline void nrf52_handle_approtect(void) {
+#if NRF52_ERRATA_249_PRESENT
+#if defined(ENABLE_APPROTECT)
+	if (nrf52_errata_249()) {
+		/* Prevent processor from unlocking APPROTECT soft branch after this point. */
+		NRF_APPROTECT->FORCEPROTECT = APPROTECT_FORCEPROTECT_FORCEPROTECT_Force;
+	}
+#else
+	if (nrf52_errata_249()) {
+		/* Load APPROTECT soft branch from UICR.
+		   If UICR->APPROTECT is disabled, POWER->APPROTECT will be disabled. */
+		NRF_APPROTECT->DISABLE = NRF_UICR->APPROTECT;
+	}
+#endif
+#endif
 }
 
 #ifdef __cplusplus
