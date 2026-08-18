@@ -16,7 +16,7 @@ static const uint8_t http_socks[HTTP_SOCK_COUNT] = {0, 1, 2, 3};
 static uint8_t rx_buf[SPI_MAX_XFER];
 
 static uint8_t http_headers[] = "HTTP/1.1 200 OK\r\n"
-				"Content-Type: text/plain\r\n"
+				"Content-Type: text/html\r\n"
 				"Connection: close\r\n"
 				"\r\n";
 
@@ -30,16 +30,44 @@ static uint8_t http_404[] = "HTTP/1.1 404 Not Found\r\n"
 			    "<p>The requested resource could not be found on this server.</p>"
 			    "</body></html>";
 
-static void busy_wait_ms(uint32_t ms) {
-	volatile uint32_t count;
+static int32_t net_send_all(uint8_t sock, uint8_t* buf, size_t len) {
+	size_t sent = 0;
 
-	while (ms--) {
-		count = 6400;
+	while (sent < len) {
+		int32_t sr = send(sock, buf + sent, (uint16_t)(len - sent));
 
-		while (count--) {
-			__asm volatile("nop");
+		if (sr <= 0) {
+			logger_log_hex_len("NET:SEND FAIL SOCK:",
+				(uint8_t)(sizeof("NET:SEND FAIL SOCK:") - 1),
+				&sock,
+				sizeof(sock));
+
+			logger_log_hex_len("NET:SEND FAIL SR:",
+				(uint8_t)(sizeof("NET:SEND FAIL SR:") - 1),
+				(uint8_t*)&sr,
+				sizeof(sr));
+
+			uint8_t st = getSn_SR(sock);
+
+			logger_log_hex_len("NET:SEND FAIL Sn_SR:",
+				(uint8_t)(sizeof("NET:SEND FAIL Sn_SR:") - 1),
+				&st,
+				sizeof(st));
+
+			uint8_t mr = getSn_MR(sock);
+
+			logger_log_hex_len("NET:SEND FAIL Sn_MR:",
+				(uint8_t)(sizeof("NET:SEND FAIL Sn_MR:") - 1),
+				&mr,
+				sizeof(mr));
+
+			return sr;
 		}
+
+		sent += (size_t)sr;
 	}
+
+	return (int32_t)sent;
 }
 
 static void log_sock_st(uint8_t sock, uint8_t st) {
@@ -104,7 +132,9 @@ static void log_sock_st(uint8_t sock, uint8_t st) {
 	}
 
 	size_t sock_label_str_len = sizeof("NET SOCK 0: ") - 1;
+
 	char sock_label_str[] = {'N', 'E', 'T', ' ', 'S', 'O', 'C', 'K', ' ', '0', ':', ' ', '\0'};
+
 	sock_label_str[9] = (uint8_t)('0' + sock);
 
 	logger_log_literal_len(sock_label_str, (uint8_t)sock_label_str_len, state, state_len);
@@ -117,11 +147,12 @@ static void log_sock_st(uint8_t sock, uint8_t st) {
 	}
 
 	uint8_t value[2] = {sock, st};
+
 	logger_log_literal_len(sock_label_str,
 		(uint8_t)sock_label_str_len,
 		"UNKNOWN STATE",
 		(uint8_t)(sizeof("UNKNOWN STATE") - 1));
-	logger_log_hex_len(sock_label_str, (uint8_t)sock_label_str_len, value, sizeof(value));
+
 	logger_log_hex_len(sock_label_str, (uint8_t)sock_label_str_len, value, sizeof(value));
 }
 
@@ -134,8 +165,10 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 	}
 
 	switch (st) {
+
 	case SOCK_CLOSED: {
 		int8_t r = socket(sock, Sn_MR_TCP, HTTP_PORT, 0);
+
 		if (r != (int8_t)sock) {
 			logger_log_literal_len("NET:",
 				(uint8_t)(sizeof("NET:") - 1),
@@ -143,17 +176,19 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 				(uint8_t)(sizeof("socket() FAIL") - 1));
 			break;
 		}
+
 		if (listen(sock) != SOCK_OK) {
 			logger_log_literal_len("NET:",
 				(uint8_t)(sizeof("NET:") - 1),
 				"listen() FAIL",
 				(uint8_t)(sizeof("listen() FAIL") - 1));
+
 			close(sock);
 		}
 	} break;
 
 	case SOCK_LISTEN:
-		// waiting for a client
+		/* Waiting for a client */
 		break;
 
 	case SOCK_ESTABLISHED: {
@@ -164,13 +199,18 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 		uint8_t req_fin = 0;
 
 		for (;;) {
-			if (getSn_SR(sock) != SOCK_ESTABLISHED) // state changed - exit
-				break;
 
-			uint16_t avail = getSn_RX_RSR(sock); // check for data received from client
+			/* Socket state changed while receiving */
+			if (getSn_SR(sock) != SOCK_ESTABLISHED) {
+				break;
+			}
+
+			uint16_t avail = getSn_RX_RSR(sock);
 
 			if (avail == 0) {
+
 				if ((xTaskGetTickCount() - start_tick) >= REQUEST_TIMEOUT_TICKS) {
+
 					logger_log_literal_len("NET:",
 						(uint8_t)(sizeof("NET:") - 1),
 						"request timeout",
@@ -179,21 +219,20 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 					disconnect(sock);
 					break;
 				}
+
 				vTaskDelay(1);
 				continue;
 			}
 
 			if (req_len >= sizeof(rx_buf)) {
-				/* Req headers too large for the buffer*/
+				/* Request headers too large for buffer */
 				disconnect(sock);
 				break;
 			}
 
 			size_t remains = sizeof(rx_buf) - req_len;
 
-			int32_t n = recv(sock,
-				rx_buf + req_len, // append to the buffer
-				(uint16_t)remains);
+			int32_t n = recv(sock, rx_buf + req_len, (uint16_t)remains);
 
 			if (n <= 0) {
 				break;
@@ -203,6 +242,7 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 
 			if (req_len >= 4) {
 				for (size_t i = 0; i <= req_len - 4; i++) {
+
 					if (mem_cmp(&rx_buf[i], (const uint8_t*)"\r\n\r\n", 4) ==
 						0) {
 						req_fin = 1;
@@ -226,22 +266,32 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 			disconnect(sock);
 			break;
 		}
+
 		TickType_t process_start = xTaskGetTickCount();
 
+		/*
+		 * Minimal routing for now:
+		 *
+		 * GET / HTTP/1.1
+		 */
 		if (req_len >= 6 && mem_cmp(rx_buf, (const uint8_t*)"GET / ", 6) == 0) {
 
 			FIL file = {0};
 
 			FRESULT fr = f_open(&file, "0:/INDEX.HTML", FA_READ);
+
 			if (fr == FR_NO_FILE || fr == FR_NO_PATH) {
-				// 404
-				int32_t sr = send(sock, http_404, (uint16_t)(sizeof(http_404) - 1));
-				if (sr < 0) {
+
+				int32_t sr = net_send_all(sock, http_404, sizeof(http_404) - 1);
+
+				if (sr <= 0) {
+
 					logger_log_literal_len("NET:",
 						(uint8_t)(sizeof("NET:") - 1),
 						"404 send() FAIL",
 						(uint8_t)(sizeof("404 send() FAIL") - 1));
-					close(sock); // hard recovery
+
+					close(sock);
 					break;
 				}
 
@@ -255,55 +305,32 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 				break;
 			}
 
-			// send http headers
-			int32_t sr = send(sock, http_headers, (uint16_t)(sizeof(http_headers) - 1));
+			/* Send HTTP response headers */
+			int32_t sr = net_send_all(sock, http_headers, sizeof(http_headers) - 1);
 
-			if (sr < 0) {
+			if (sr <= 0) {
+
 				logger_log_hex_len("NET:HEADERS SEND SR:",
 					(uint8_t)(sizeof("NET:HEADERS SEND SR:") - 1),
 					(uint8_t*)&sr,
 					sizeof(sr));
+
 				f_close(&file);
-				close(sock); // hard recovery
+				close(sock);
 				break;
 			}
 
-			// tmp
-			// size_t total = sizeof(lorem) - 1;
-			// size_t sent = 0;
-			// uint8_t failed = 0;
-
-			// while (sent < total) {
-			//	size_t remaining = total - sent;
-			//	uint16_t chunk =
-			//		(uint16_t)((remaining > SPI_MAX_XFER) ? SPI_MAX_XFER
-			//						      : remaining);
-
-			//	sr = send(sock, lorem + sent, chunk);
-
-			//	if (sr < 0) {
-			//		failed = 1;
-			//		break;
-			//	}
-
-			//	sent += (size_t)sr;
-			//}
-
-			// file streaming
+			/* Stream file contents */
 			uint8_t filedata[SPI_MAX_XFER] = {0};
+
 			UINT br = 0;
 			uint8_t failed = 0;
-
-			uint8_t mr = getSn_MR(sock);
-			logger_log_hex_len("NET:SOCK MR(bef):",
-				(uint8_t)(sizeof("NET:SOCK MR(bef):") - 1),
-				&mr,
-				sizeof(mr));
 
 			for (;;) {
 
 				if ((xTaskGetTickCount() - process_start) >=
 					REQUEST_PROCESS_TIMEOUT_TICKS) {
+
 					logger_log_literal_len("NET:",
 						(uint8_t)(sizeof("NET:") - 1),
 						"processing timeout",
@@ -312,43 +339,27 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 					failed = 1;
 					break;
 				}
-				fr = f_read(&file, &filedata, sizeof(filedata), &br);
+
+				fr = f_read(&file, filedata, sizeof(filedata), &br);
+
 				if (fr != FR_OK) {
 					failed = 1;
 					break;
 				}
 
-				// vTaskDelay(pdMS_TO_TICKS(50));
-				busy_wait_ms(50);
-
-				mr = getSn_MR(sock);
-				logger_log_hex_len("NET:SOCK MR(aft):",
-					(uint8_t)(sizeof("NET:SOCK MR(aft):") - 1),
-					&mr,
-					sizeof(mr));
-
 				if (br == 0) {
-					break; // EOF
-				}
-
-				// log the content of the file chunk being sent
-				logger_log_literal_len("NET:FILE CHUNK:",
-					(uint8_t)(sizeof("NET:FILE CHUNK:") - 1),
-					(const char*)filedata,
-					(uint8_t)br);
-				sr = send(sock, filedata, (uint16_t)br);
-
-				logger_log_int_len("NET:SEND SR:",
-					(uint8_t)(sizeof("NET:SEND SR:") - 1),
-					&sr,
-					sizeof(sr));
-				if (sr < 0) {
-					failed = 1;
+					/* EOF */
 					break;
 				}
 
-				// TODO: Handle partial send
+				sr = net_send_all(sock, filedata, br);
+
+				if (sr <= 0) {
+					failed = 1;
+					break;
+				}
 			}
+
 			f_close(&file);
 
 			if (failed) {
@@ -358,26 +369,30 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 
 			disconnect(sock);
 			break;
+
 		} else {
-			// 404
 
-			int32_t sr = send(sock, http_404, (uint16_t)(sizeof(http_404) - 1));
+			/* Unknown path/method */
+			int32_t sr = net_send_all(sock, http_404, sizeof(http_404) - 1);
 
-			if (sr < 0) {
+			if (sr <= 0) {
+
 				logger_log_literal_len("NET:",
 					(uint8_t)(sizeof("NET:") - 1),
 					"404 send() FAIL",
 					(uint8_t)(sizeof("404 send() FAIL") - 1));
-				close(sock); // hard recovery
+
+				close(sock);
 				break;
 			}
 
 			disconnect(sock);
+			break;
 		}
+
 	} break;
 
 	case SOCK_CLOSE_WAIT:
-
 		close(sock);
 		break;
 
@@ -401,6 +416,7 @@ static void net_task(void* arg) {
 	ctlnetwork(CN_SET_NETINFO, &net);
 
 	struct wiz_NetInfo_t get_net = {0};
+
 	ctlnetwork(CN_GET_NETINFO, &get_net);
 
 	configASSERT(get_net.dhcp == NETINFO_STATIC);
@@ -413,7 +429,9 @@ static void net_task(void* arg) {
 	uint8_t last_st[HTTP_SOCK_COUNT] = {0xFF, 0xFF, 0xFF, 0xFF};
 
 	for (;;) {
+
 		for (uint8_t i = 0; i < HTTP_SOCK_COUNT; i++) {
+
 			handle_http_sock(http_socks[i], &last_st[i]);
 		}
 
@@ -426,6 +444,7 @@ int net_init(void) {
 	int8_t st = w5500_init();
 
 	if (st != 0) {
+
 		logger_log_literal_len("NET INIT:",
 			(uint8_t)(sizeof("NET INIT:") - 1),
 			"W5500 INIT FAIL",
@@ -434,15 +453,10 @@ int net_init(void) {
 		return -1;
 	}
 
-	BaseType_t ok = xTaskCreate(net_task, /* Task function */
-		"net_task",		      /* Name (for debug) */
-		2048,			      /* Stack size (words, not bytes) */
-		NULL,			      /* Parameters */
-		2,			      /* Priority */
-		NULL			      /* Task handle */
-	);
+	BaseType_t ok = xTaskCreate(net_task, "net_task", 2048, NULL, 2, NULL);
 
 	if (ok != pdPASS) {
+
 		logger_log_literal_len("NET INIT:",
 			(uint8_t)(sizeof("NET INIT:") - 1),
 			"TASK CREATE FAIL",

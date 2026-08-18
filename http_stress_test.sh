@@ -1,7 +1,7 @@
 success=0
 failure=0
 
-for i in {1..100}; do
+for i in {1..250}; do
   echo "=== round $i ==="
 
   curl -sS -o /tmp/random.out -w "random: %{http_code}\n" \
