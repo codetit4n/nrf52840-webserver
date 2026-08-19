@@ -4,70 +4,154 @@
 #include "ff.h"
 #include "memutils.h"
 #include "modules/logger.h"
-#include "projdefs.h"
 #include "socket.h"
 #include "task.h"
 #include "w5500.h"
 
-#define REQUEST_PROCESS_TIMEOUT_TICKS pdMS_TO_TICKS(5000)
-
 static const uint8_t http_socks[HTTP_SOCK_COUNT] = {0, 1, 2, 3};
-
 static uint8_t rx_buf[SPI_MAX_XFER];
 
-static uint8_t http_headers[] = "HTTP/1.1 200 OK\r\n"
-				"Content-Type: text/html\r\n"
-				"Connection: close\r\n"
-				"\r\n";
+static uint8_t get_mime_type(const char ext[], int n, const char** mime) {
+	if ((n == 4 && mem_cmp(ext, "html", 4) == 0) || (n == 4 && mem_cmp(ext, "HTML", 4) == 0) ||
+		(n == 3 && mem_cmp(ext, "htm", 3) == 0) ||
+		(n == 3 && mem_cmp(ext, "HTM", 3) == 0)) {
 
-static uint8_t http_404[] = "HTTP/1.1 404 Not Found\r\n"
-			    "Content-Type: text/html\r\n"
-			    "Connection: close\r\n"
-			    "\r\n"
-			    "<!DOCTYPE html>"
-			    "<html><head><title>404 Not Found</title></head>"
-			    "<body><h1>404 Not Found</h1>"
-			    "<p>The requested resource could not be found on this server.</p>"
-			    "</body></html>";
+		*mime = "text/html";
+		return sizeof("text/html") - 1;
+	}
 
-static int32_t net_send_all(uint8_t sock, uint8_t* buf, size_t len) {
+	if ((n == 3 && mem_cmp(ext, "css", 3) == 0) || (n == 3 && mem_cmp(ext, "CSS", 3) == 0)) {
+
+		*mime = "text/css";
+		return sizeof("text/css") - 1;
+	}
+
+	if ((n == 2 && mem_cmp(ext, "js", 2) == 0) || (n == 2 && mem_cmp(ext, "JS", 2) == 0)) {
+
+		*mime = "application/javascript";
+		return sizeof("application/javascript") - 1;
+	}
+
+	if ((n == 3 && mem_cmp(ext, "png", 3) == 0) || (n == 3 && mem_cmp(ext, "PNG", 3) == 0)) {
+
+		*mime = "image/png";
+		return sizeof("image/png") - 1;
+	}
+
+	if ((n == 3 && mem_cmp(ext, "jpg", 3) == 0) || (n == 3 && mem_cmp(ext, "JPG", 3) == 0) ||
+		(n == 4 && mem_cmp(ext, "jpeg", 4) == 0) ||
+		(n == 4 && mem_cmp(ext, "JPEG", 4) == 0)) {
+
+		*mime = "image/jpeg";
+		return sizeof("image/jpeg") - 1;
+	}
+
+	if ((n == 3 && mem_cmp(ext, "svg", 3) == 0) || (n == 3 && mem_cmp(ext, "SVG", 3) == 0)) {
+
+		*mime = "image/svg+xml";
+		return sizeof("image/svg+xml") - 1;
+	}
+
+	if ((n == 3 && mem_cmp(ext, "ico", 3) == 0) || (n == 3 && mem_cmp(ext, "ICO", 3) == 0)) {
+
+		*mime = "image/x-icon";
+		return sizeof("image/x-icon") - 1;
+	}
+
+	if ((n == 3 && mem_cmp(ext, "txt", 3) == 0) || (n == 3 && mem_cmp(ext, "TXT", 3) == 0)) {
+
+		*mime = "text/plain";
+		return sizeof("text/plain") - 1;
+	}
+
+	*mime = "application/octet-stream";
+	return sizeof("application/octet-stream") - 1;
+}
+
+static uint8_t
+build_http_headers(uint8_t out[], size_t out_size, const char* mime, uint8_t mime_len) {
+	static const uint8_t status[] = "HTTP/1.1 200 OK\r\n";
+	static const uint8_t content_type[] = "Content-Type: ";
+	static const uint8_t connection[] = "\r\nConnection: close\r\n\r\n";
+
+	size_t status_len = sizeof(status) - 1;
+	size_t content_type_len = sizeof(content_type) - 1;
+	size_t connection_len = sizeof(connection) - 1;
+
+	size_t total_len = status_len + content_type_len + mime_len + connection_len;
+
+	if (total_len > out_size) {
+		return 0;
+	}
+
+	size_t pos = 0;
+
+	mem_cpy(out + pos, status, status_len);
+	pos += status_len;
+
+	mem_cpy(out + pos, content_type, content_type_len);
+	pos += content_type_len;
+
+	mem_cpy(out + pos, mime, mime_len);
+	pos += mime_len;
+
+	mem_cpy(out + pos, connection, connection_len);
+	pos += connection_len;
+
+	return (uint8_t)pos;
+}
+
+static int32_t net_send_all(uint8_t sock, const uint8_t* buf, size_t len) {
 	size_t sent = 0;
 
 	while (sent < len) {
-		int32_t sr = send(sock, buf + sent, (uint16_t)(len - sent));
-
+		int32_t sr = send(sock, (uint8_t*)(buf + sent), (uint16_t)(len - sent));
 		if (sr <= 0) {
-			logger_log_hex_len("NET:SEND FAIL SOCK:",
-				(uint8_t)(sizeof("NET:SEND FAIL SOCK:") - 1),
-				&sock,
-				sizeof(sock));
-
-			logger_log_hex_len("NET:SEND FAIL SR:",
-				(uint8_t)(sizeof("NET:SEND FAIL SR:") - 1),
-				(uint8_t*)&sr,
-				sizeof(sr));
-
-			uint8_t st = getSn_SR(sock);
-
-			logger_log_hex_len("NET:SEND FAIL Sn_SR:",
-				(uint8_t)(sizeof("NET:SEND FAIL Sn_SR:") - 1),
-				&st,
-				sizeof(st));
-
-			uint8_t mr = getSn_MR(sock);
-
-			logger_log_hex_len("NET:SEND FAIL Sn_MR:",
-				(uint8_t)(sizeof("NET:SEND FAIL Sn_MR:") - 1),
-				&mr,
-				sizeof(mr));
-
 			return sr;
 		}
-
 		sent += (size_t)sr;
 	}
 
 	return (int32_t)sent;
+}
+
+static int get_next_word(uint8_t inp[], uint8_t out[], int ptr, int lim) {
+	int i = ptr;
+
+	while (i < lim && inp[i] != ' ' && inp[i] != '\r' && inp[i] != '\n' && inp[i] != '\0') {
+
+		out[i - ptr] = inp[i];
+		i++;
+	}
+
+	return i - ptr;
+}
+
+static int get_file_extension(uint8_t filename[], uint8_t ext[], int lim) {
+	int i = 0;
+	int dot = -1;
+
+	while (i < lim && filename[i] != '\0') {
+		if (filename[i] == '.') {
+			dot = i;
+		}
+
+		i++;
+	}
+
+	if (dot < 0) {
+		return 0;
+	}
+
+	int mime_len = i - dot - 1;
+
+	for (int j = 0; j < mime_len; j++) {
+		ext[j] = filename[dot + 1 + j];
+	}
+
+	ext[mime_len] = '\0';
+
+	return mime_len;
 }
 
 static void log_sock_st(uint8_t sock, uint8_t st) {
@@ -269,20 +353,33 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 
 		TickType_t process_start = xTaskGetTickCount();
 
-		/*
-		 * Minimal routing for now:
-		 *
-		 * GET / HTTP/1.1
-		 */
-		if (req_len >= 6 && mem_cmp(rx_buf, (const uint8_t*)"GET / ", 6) == 0) {
+		if (req_len >= 6 && mem_cmp(rx_buf, (const uint8_t*)"GET /", 5) == 0) {
+
+			uint8_t f_name[req_len + 1];
+			int f_len = get_next_word(rx_buf, f_name, 4, req_len);
+			f_name[f_len] = '\0';
+
+			uint8_t f_name_appended[MAX_PATH_LEN] = {0};
+			mem_cpy(f_name_appended, "0:", 2);
+
+			if (f_len == 1 && mem_cmp(f_name, "/", 1) == 0) {
+				mem_cpy(f_name_appended + 2, "/INDEX.HTML", 11);
+				f_name_appended[13] = '\0';
+			} else {
+				mem_cpy(f_name_appended + 2, f_name, f_len);
+				f_name_appended[f_len + 2] = '\0';
+			}
+
+			uint8_t ext[MAX_PATH_LEN];
+			int ext_len = get_file_extension(f_name_appended, ext, MAX_PATH_LEN);
 
 			FIL file = {0};
-
-			FRESULT fr = f_open(&file, "0:/INDEX.HTML", FA_READ);
+			FRESULT fr = f_open(&file, (const char*)f_name_appended, FA_READ);
 
 			if (fr == FR_NO_FILE || fr == FR_NO_PATH) {
-
-				int32_t sr = net_send_all(sock, http_404, sizeof(http_404) - 1);
+				int32_t sr = net_send_all(sock,
+					(const uint8_t*)HTTP_404,
+					sizeof(HTTP_404) - 1);
 
 				if (sr <= 0) {
 
@@ -306,10 +403,24 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 			}
 
 			/* Send HTTP response headers */
-			int32_t sr = net_send_all(sock, http_headers, sizeof(http_headers) - 1);
+			const char* mime = NULL;
+			uint8_t mime_len = get_mime_type((const char*)ext, ext_len, &mime);
+
+			uint8_t http_headers[96];
+			uint8_t http_headers_len = build_http_headers(http_headers,
+				sizeof(http_headers),
+				mime,
+				mime_len);
+
+			if (http_headers_len == 0) {
+				f_close(&file);
+				close(sock);
+				break;
+			}
+
+			int32_t sr = net_send_all(sock, http_headers, http_headers_len);
 
 			if (sr <= 0) {
-
 				logger_log_hex_len("NET:HEADERS SEND SR:",
 					(uint8_t)(sizeof("NET:HEADERS SEND SR:") - 1),
 					(uint8_t*)&sr,
@@ -327,7 +438,6 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 			uint8_t failed = 0;
 
 			for (;;) {
-
 				if ((xTaskGetTickCount() - process_start) >=
 					REQUEST_PROCESS_TIMEOUT_TICKS) {
 
@@ -373,7 +483,8 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 		} else {
 
 			/* Unknown path/method */
-			int32_t sr = net_send_all(sock, http_404, sizeof(http_404) - 1);
+			int32_t sr =
+				net_send_all(sock, (const uint8_t*)HTTP_404, sizeof(HTTP_404) - 1);
 
 			if (sr <= 0) {
 
@@ -431,7 +542,6 @@ static void net_task(void* arg) {
 	for (;;) {
 
 		for (uint8_t i = 0; i < HTTP_SOCK_COUNT; i++) {
-
 			handle_http_sock(http_socks[i], &last_st[i]);
 		}
 
