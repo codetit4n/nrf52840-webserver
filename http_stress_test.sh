@@ -33,6 +33,7 @@ done
 
 echo
 echo "=== summary ==="
+echo "time:      $(date '+%d %b %Y, %I:%M %p')"
 echo "successes: $success"
 echo "failures:  $failure"
 echo "total:     $((success + failure))"

@@ -1,12 +1,14 @@
 # nRF52840 web server
 
+> [!IMPORTANT]
+> Subscribe to my [Newsletter](https://loke.sh/blog/newsletter/) for updates on this project's technical write-ups.
+
 Writing a web server for the nRF52840 microcontroller to learn complex embedded systems programming
 and for fun. Built using FreeRTOS.
 
-Technical write-ups for this project: https://loke.sh/blog/nrf52840-web-server
+https://loke.sh/blog/nrf52840-web-server
 
-> [!IMPORTANT]
-> Subscribe to my [Newsletter](https://loke.sh/blog/newsletter/) for updates on this project's technical write-ups.
+## Commands
 
 #### Clone with submodules:
 
@@ -14,9 +16,9 @@ Technical write-ups for this project: https://loke.sh/blog/nrf52840-web-server
 git clone --recurse-submodules https://github.com/codetit4n/nrf52840-webserver
 ```
 
-### Commands:
+#### Build, Flash and Clean:
 
-```bash
+```shell
 # Build the firmware - Creates the firmware binary in the build/ directory
 make
 # Flash the firmware to the nRF52840
