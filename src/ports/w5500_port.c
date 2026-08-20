@@ -13,7 +13,7 @@ static StaticSemaphore_t w5500_mutex_buf;
 
 static const spi_device_t w5500_dev = {.cs_pin = W5500_CSN_PIN,
 	.mode = SPI_MODE_0,
-	.frequency = SPI_FREQ_8M,
+	.frequency = SPI_FREQ_16M,
 	.order = SPI_MSB_FIRST,
 	.dummy_byte = 0xFF};
 

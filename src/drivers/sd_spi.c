@@ -14,7 +14,8 @@ static const uint8_t SD_CMD58[] = {0x7A, 0x00, 0x00, 0x00, 0x00, 0xFF}; // CMD58
 static const uint8_t SD_CMD9[] = {0x49, 0x00, 0x00, 0x00, 0x00, 0xFF};	// CMD9 with dummy CRC
 static const uint8_t SD_CMD17[] = {0x51, 0x00, 0x00, 0x00, 0x00, 0xFF}; // CMD17 with dummy CRC
 
-static const spi_device_t sd_dev = {.cs_pin = SD_CSN_PIN,
+// SD INIT
+static spi_device_t sd_dev = {.cs_pin = SD_CSN_PIN,
 	.mode = SPI_MODE_0,
 	.frequency = SPI_FREQ_250K,
 	.order = SPI_MSB_FIRST,
@@ -393,6 +394,7 @@ sd_status_t sd_init(void) {
 	block_count = ((uint64_t)c_size + 1ULL) * 1024ULL;
 
 	sd_initialized = 1;
+	sd_dev.frequency = SPI_FREQ_2M; // Operating frequency
 
 	return SD_OK;
 }

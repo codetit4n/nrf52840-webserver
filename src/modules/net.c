@@ -11,6 +11,58 @@
 static const uint8_t http_socks[HTTP_SOCK_COUNT] = {0, 1, 2, 3};
 static uint8_t rx_buf[SPI_MAX_XFER];
 
+static const uint8_t STATIC_ROOT[] = "0:/static";
+static const uint8_t STATIC_INDEX[] = "0:/static/INDEX.HTML";
+
+static const uint8_t HTTP_400[] = "HTTP/1.1 400 Bad Request\r\n"
+				  "Content-Type: text/html\r\n"
+				  "Connection: close\r\n"
+				  "\r\n"
+				  "<html><body><h1>400 Bad Request</h1></body></html>";
+
+static uint8_t validate_http_path(const uint8_t path[], int len) {
+	if (path == NULL || len <= 0) {
+		return 0;
+	}
+
+	// 0:/static + URL path + '\0
+	if ((sizeof(STATIC_ROOT) - 1) + (size_t)len + 1 > MAX_PATH_LEN) {
+		return 0;
+	}
+
+	// Path must begin with /
+	if (path[0] != '/') {
+		return 0;
+	}
+
+	for (int i = 0; i < len; i++) {
+
+		uint8_t c = path[i];
+
+		// Reject control characters and non-printable ASCII
+		if (c < 0x20 || c > 0x7E) {
+			return 0;
+		}
+
+		// Reject Windows-style separators
+		if (c == '\\') {
+			return 0;
+		}
+
+		// Reject :
+		if (c == ':') {
+			return 0;
+		}
+
+		// Reject ..
+		if (c == '.' && (i + 1) < len && path[i + 1] == '.') {
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 static uint8_t get_mime_type(const char ext[], int n, const char** mime) {
 	if ((n == 4 && mem_cmp(ext, "html", 4) == 0) || (n == 4 && mem_cmp(ext, "HTML", 4) == 0) ||
 		(n == 3 && mem_cmp(ext, "htm", 3) == 0) ||
@@ -115,7 +167,7 @@ static int32_t net_send_all(uint8_t sock, const uint8_t* buf, size_t len) {
 	return (int32_t)sent;
 }
 
-static int get_next_word(uint8_t inp[], uint8_t out[], int ptr, int lim) {
+static int extract_request_path(uint8_t inp[], uint8_t out[], int ptr, int lim) {
 	int i = ptr;
 
 	while (i < lim && inp[i] != ' ' && inp[i] != '\r' && inp[i] != '\n' && inp[i] != '\0') {
@@ -356,18 +408,38 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 		if (req_len >= 6 && mem_cmp(rx_buf, (const uint8_t*)"GET /", 5) == 0) {
 
 			uint8_t f_name[req_len + 1];
-			int f_len = get_next_word(rx_buf, f_name, 4, req_len);
+			int f_len = extract_request_path(rx_buf, f_name, 4, req_len);
 			f_name[f_len] = '\0';
 
+			if (!validate_http_path(f_name, f_len)) {
+				logger_log_literal_len("NET:",
+					(uint8_t)(sizeof("NET:") - 1),
+					"invalid path",
+					(uint8_t)(sizeof("invalid path") - 1));
+
+				int32_t sr = net_send_all(sock, HTTP_400, sizeof(HTTP_400) - 1);
+
+				if (sr <= 0) {
+					close(sock);
+					break;
+				}
+
+				disconnect(sock);
+				break;
+			}
+
 			uint8_t f_name_appended[MAX_PATH_LEN] = {0};
-			mem_cpy(f_name_appended, "0:", 2);
 
 			if (f_len == 1 && mem_cmp(f_name, "/", 1) == 0) {
-				mem_cpy(f_name_appended + 2, "/INDEX.HTML", 11);
-				f_name_appended[13] = '\0';
+				mem_cpy(f_name_appended, STATIC_INDEX, sizeof(STATIC_INDEX) - 1);
+				f_name_appended[sizeof(STATIC_INDEX) - 1] = '\0';
+
 			} else {
-				mem_cpy(f_name_appended + 2, f_name, f_len);
-				f_name_appended[f_len + 2] = '\0';
+
+				size_t static_root_len = sizeof(STATIC_ROOT) - 1;
+				mem_cpy(f_name_appended, STATIC_ROOT, static_root_len);
+				mem_cpy(f_name_appended + static_root_len, f_name, (size_t)f_len);
+				f_name_appended[static_root_len + (size_t)f_len] = '\0';
 			}
 
 			uint8_t ext[MAX_PATH_LEN];

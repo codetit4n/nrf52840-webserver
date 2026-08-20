@@ -1,760 +1,314 @@
 === round 1 ===
-random: 404
-root:   200
+mixed:    200  /STYLE.CSS
+root:     200
 === round 2 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /APP.JS
 === round 3 ===
-random: 404
-root:   200
+mixed:    200  /TEST.TXT
+root:     200
 === round 4 ===
-random: 404
-root:   200
+mixed:    200  /favicon.ico
+root:     200
 === round 5 ===
-random: 404
-root:   200
+mixed:    404  /random
+root:     200
 === round 6 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /STYLE.CSS
 === round 7 ===
-random: 404
-root:   200
+mixed:    200  /APP.JS
+root:     200
 === round 8 ===
-root:   200
-random: 404
+mixed:    200  /TEST.TXT
+root:     200
 === round 9 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /favicon.ico
 === round 10 ===
-random: 404
-root:   200
+mixed:    404  /random
+root:     200
 === round 11 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /STYLE.CSS
 === round 12 ===
-random: 404
-root:   200
+mixed:    200  /APP.JS
+root:     200
 === round 13 ===
-random: 404
-root:   200
+mixed:    200  /TEST.TXT
+root:     200
 === round 14 ===
-root:   200
-random: 404
+curl: (56) Recv failure: Connection reset by peer
+root:     000
+mixed:    200  /favicon.ico
 === round 15 ===
-random: 404
-root:   200
+root:     200
+mixed:    404  /random
 === round 16 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /STYLE.CSS
 === round 17 ===
-root:   200
-random: 404
+mixed:    200  /APP.JS
+root:     200
 === round 18 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /TEST.TXT
 === round 19 ===
-random: 404
-root:   200
+mixed:    200  /favicon.ico
+root:     200
 === round 20 ===
-random: 404
-root:   200
+mixed:    404  /random
+root:     200
 === round 21 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /STYLE.CSS
 === round 22 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /APP.JS
 === round 23 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /TEST.TXT
 === round 24 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /favicon.ico
 === round 25 ===
-random: 404
-root:   200
+mixed:    404  /random
+root:     200
 === round 26 ===
-random: 404
-root:   200
+mixed:    200  /STYLE.CSS
+root:     200
 === round 27 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /APP.JS
 === round 28 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /TEST.TXT
 === round 29 ===
-random: 404
-root:   200
+mixed:    200  /favicon.ico
+root:     200
 === round 30 ===
-random: 404
-root:   200
+root:     200
+mixed:    404  /random
 === round 31 ===
-random: 404
-root:   200
+mixed:    200  /STYLE.CSS
+root:     200
 === round 32 ===
-root:   200
-random: 404
+mixed:    200  /APP.JS
+root:     200
 === round 33 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /TEST.TXT
 === round 34 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /favicon.ico
 === round 35 ===
-random: 404
-root:   200
+root:     200
+mixed:    404  /random
 === round 36 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /STYLE.CSS
 === round 37 ===
-root:   200
-random: 404
+mixed:    200  /APP.JS
+root:     200
 === round 38 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /TEST.TXT
 === round 39 ===
-root:   200
-random: 404
+mixed:    200  /favicon.ico
+root:     200
 === round 40 ===
-root:   200
-random: 404
+root:     200
+mixed:    404  /random
 === round 41 ===
-root:   200
-random: 404
+mixed:    200  /STYLE.CSS
+root:     200
 === round 42 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /APP.JS
 === round 43 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /TEST.TXT
 === round 44 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /favicon.ico
 === round 45 ===
-random: 404
-root:   200
+root:     200
+mixed:    404  /random
 === round 46 ===
-random: 404
-root:   200
+mixed:    200  /STYLE.CSS
+root:     200
 === round 47 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /APP.JS
 === round 48 ===
-random: 404
-root:   200
+mixed:    200  /TEST.TXT
+root:     200
 === round 49 ===
-random: 404
-root:   200
+mixed:    200  /favicon.ico
+root:     200
 === round 50 ===
-random: 404
-root:   200
+mixed:    404  /random
+root:     200
 === round 51 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /STYLE.CSS
 === round 52 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /APP.JS
 === round 53 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /TEST.TXT
 === round 54 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /favicon.ico
 === round 55 ===
-random: 404
-root:   200
+root:     200
+mixed:    404  /random
 === round 56 ===
-curl: (56) Recv failure: Connection reset by peer
-root:   000
-random: 404
+mixed:    200  /STYLE.CSS
+root:     200
 === round 57 ===
-root:   200
-random: 404
+mixed:    200  /APP.JS
+root:     200
 === round 58 ===
-root:   200
-random: 404
+mixed:    200  /TEST.TXT
+root:     200
 === round 59 ===
-root:   200
-random: 404
+mixed:    200  /favicon.ico
+root:     200
 === round 60 ===
-random: 404
-root:   200
+root:     200
+mixed:    404  /random
 === round 61 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /STYLE.CSS
 === round 62 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /APP.JS
 === round 63 ===
-random: 404
-root:   200
+mixed:    200  /TEST.TXT
+root:     200
 === round 64 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /favicon.ico
 === round 65 ===
-random: 404
-root:   200
+root:     200
+mixed:    404  /random
 === round 66 ===
-random: 404
-root:   200
+mixed:    200  /STYLE.CSS
+root:     200
 === round 67 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /APP.JS
 === round 68 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /TEST.TXT
 === round 69 ===
-random: 404
-root:   200
+mixed:    200  /favicon.ico
+root:     200
 === round 70 ===
-random: 404
-root:   200
+root:     200
+mixed:    404  /random
 === round 71 ===
-random: 404
-root:   200
+mixed:    200  /STYLE.CSS
+root:     200
 === round 72 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /APP.JS
 === round 73 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /TEST.TXT
 === round 74 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /favicon.ico
 === round 75 ===
-random: 404
-root:   200
+mixed:    404  /random
+root:     200
 === round 76 ===
-random: 404
-root:   200
+mixed:    200  /STYLE.CSS
+root:     200
 === round 77 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /APP.JS
 === round 78 ===
-random: 404
-root:   200
+mixed:    200  /TEST.TXT
+root:     200
 === round 79 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /favicon.ico
 === round 80 ===
-root:   200
-random: 404
+root:     200
+mixed:    404  /random
 === round 81 ===
-root:   200
-random: 404
+mixed:    200  /STYLE.CSS
+root:     200
 === round 82 ===
-random: 404
-root:   200
+mixed:    200  /APP.JS
+root:     200
 === round 83 ===
-root:   200
-random: 404
+mixed:    200  /TEST.TXT
+root:     200
 === round 84 ===
-root:   200
-random: 404
+mixed:    200  /favicon.ico
+root:     200
 === round 85 ===
-random: 404
-root:   200
+root:     200
+mixed:    404  /random
 === round 86 ===
-random: 404
-root:   200
+mixed:    200  /STYLE.CSS
+root:     200
 === round 87 ===
-random: 404
-root:   200
+mixed:    200  /APP.JS
+root:     200
 === round 88 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /TEST.TXT
 === round 89 ===
-random: 404
-root:   200
+mixed:    200  /favicon.ico
+root:     200
 === round 90 ===
-random: 404
-root:   200
+mixed:    404  /random
+root:     200
 === round 91 ===
-root:   200
-random: 404
+mixed:    200  /STYLE.CSS
+root:     200
 === round 92 ===
-random: 404
-root:   200
+mixed:    200  /APP.JS
+root:     200
 === round 93 ===
-random: 404
-root:   200
+root:     200
+mixed:    200  /TEST.TXT
 === round 94 ===
-root:   200
-random: 404
+mixed:    200  /favicon.ico
+root:     200
 === round 95 ===
-root:   200
-random: 404
+mixed:    404  /random
+root:     200
 === round 96 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /STYLE.CSS
 === round 97 ===
-root:   200
-random: 404
+curl: (56) Recv failure: Connection reset by peer
+root:     000
+mixed:    200  /APP.JS
 === round 98 ===
-random: 404
-root:   200
+mixed:    200  /TEST.TXT
+root:     200
 === round 99 ===
-root:   200
-random: 404
+root:     200
+mixed:    200  /favicon.ico
 === round 100 ===
-random: 404
-root:   200
-=== round 101 ===
-random: 404
-root:   200
-=== round 102 ===
-random: 404
-root:   200
-=== round 103 ===
-root:   200
-random: 404
-=== round 104 ===
-random: 404
-root:   200
-=== round 105 ===
-random: 404
-root:   200
-=== round 106 ===
-random: 404
-root:   200
-=== round 107 ===
-random: 404
-root:   200
-=== round 108 ===
-root:   200
-random: 404
-=== round 109 ===
-random: 404
-root:   200
-=== round 110 ===
-root:   200
-random: 404
-=== round 111 ===
-random: 404
-root:   200
-=== round 112 ===
-random: 404
-root:   200
-=== round 113 ===
-random: 404
-root:   200
-=== round 114 ===
-random: 404
-root:   200
-=== round 115 ===
-random: 404
-root:   200
-=== round 116 ===
-random: 404
-root:   200
-=== round 117 ===
-root:   200
-random: 404
-=== round 118 ===
-root:   200
-random: 404
-=== round 119 ===
-random: 404
-root:   200
-=== round 120 ===
-random: 404
-root:   200
-=== round 121 ===
-random: 404
-root:   200
-=== round 122 ===
-random: 404
-root:   200
-=== round 123 ===
-random: 404
-root:   200
-=== round 124 ===
-random: 404
-root:   200
-=== round 125 ===
-random: 404
-root:   200
-=== round 126 ===
-random: 404
-root:   200
-=== round 127 ===
-root:   200
-random: 404
-=== round 128 ===
-random: 404
-root:   200
-=== round 129 ===
-random: 404
-root:   200
-=== round 130 ===
-random: 404
-root:   200
-=== round 131 ===
-root:   200
-random: 404
-=== round 132 ===
-random: 404
-root:   200
-=== round 133 ===
-random: 404
-root:   200
-=== round 134 ===
-random: 404
-root:   200
-=== round 135 ===
-random: 404
-root:   200
-=== round 136 ===
-random: 404
-root:   200
-=== round 137 ===
-random: 404
-root:   200
-=== round 138 ===
-random: 404
-root:   200
-=== round 139 ===
-random: 404
-root:   200
-=== round 140 ===
-random: 404
-root:   200
-=== round 141 ===
-random: 404
-root:   200
-=== round 142 ===
-root:   200
-random: 404
-=== round 143 ===
-random: 404
-root:   200
-=== round 144 ===
-random: 404
-root:   200
-=== round 145 ===
-random: 404
-root:   200
-=== round 146 ===
-random: 404
-root:   200
-=== round 147 ===
-random: 404
-root:   200
-=== round 148 ===
-random: 404
-root:   200
-=== round 149 ===
-random: 404
-root:   200
-=== round 150 ===
-random: 404
-root:   200
-=== round 151 ===
-random: 404
-root:   200
-=== round 152 ===
-random: 404
-root:   200
-=== round 153 ===
-random: 404
-root:   200
-=== round 154 ===
-random: 404
-root:   200
-=== round 155 ===
-random: 404
-root:   200
-=== round 156 ===
-random: 404
-root:   200
-=== round 157 ===
-random: 404
-root:   200
-=== round 158 ===
-random: 404
-root:   200
-=== round 159 ===
-random: 404
-root:   200
-=== round 160 ===
-random: 404
-root:   200
-=== round 161 ===
-root:   200
-random: 404
-=== round 162 ===
-random: 404
-root:   200
-=== round 163 ===
-random: 404
-root:   200
-=== round 164 ===
-random: 404
-root:   200
-=== round 165 ===
-random: 404
-root:   200
-=== round 166 ===
-root:   200
-random: 404
-=== round 167 ===
-random: 404
-root:   200
-=== round 168 ===
-root:   200
-random: 404
-=== round 169 ===
-random: 404
-root:   200
-=== round 170 ===
-random: 404
-root:   200
-=== round 171 ===
-random: 404
-root:   200
-=== round 172 ===
-root:   200
-random: 404
-=== round 173 ===
-random: 404
-root:   200
-=== round 174 ===
-random: 404
-root:   200
-=== round 175 ===
-root:   200
-random: 404
-=== round 176 ===
-root:   200
-random: 404
-=== round 177 ===
-root:   200
-random: 404
-=== round 178 ===
-random: 404
-root:   200
-=== round 179 ===
-root:   200
-random: 404
-=== round 180 ===
-root:   200
-random: 404
-=== round 181 ===
-root:   200
-random: 404
-=== round 182 ===
-random: 404
-root:   200
-=== round 183 ===
-random: 404
-root:   200
-=== round 184 ===
-root:   200
-random: 404
-=== round 185 ===
-root:   200
-random: 404
-=== round 186 ===
-root:   200
-random: 404
-=== round 187 ===
-random: 404
-root:   200
-=== round 188 ===
-random: 404
-root:   200
-=== round 189 ===
-random: 404
-root:   200
-=== round 190 ===
-root:   200
-random: 404
-=== round 191 ===
-random: 404
-root:   200
-=== round 192 ===
-random: 404
-root:   200
-=== round 193 ===
-random: 404
-root:   200
-=== round 194 ===
-random: 404
-root:   200
-=== round 195 ===
-random: 404
-root:   200
-=== round 196 ===
-random: 404
-root:   200
-=== round 197 ===
-curl: (56) Recv failure: Connection reset by peer
-random: 000
-root:   200
-=== round 198 ===
-root:   200
-random: 404
-=== round 199 ===
-root:   200
-random: 404
-=== round 200 ===
-random: 404
-root:   200
-=== round 201 ===
-root:   200
-random: 404
-=== round 202 ===
-random: 404
-root:   200
-=== round 203 ===
-curl: (56) Recv failure: Connection reset by peer
-root:   000
-random: 404
-=== round 204 ===
-random: 404
-root:   200
-=== round 205 ===
-root:   200
-random: 404
-=== round 206 ===
-root:   200
-random: 404
-=== round 207 ===
-random: 404
-root:   200
-=== round 208 ===
-root:   200
-random: 404
-=== round 209 ===
-root:   200
-random: 404
-=== round 210 ===
-random: 404
-root:   200
-=== round 211 ===
-random: 404
-root:   200
-=== round 212 ===
-root:   200
-random: 404
-=== round 213 ===
-root:   200
-random: 404
-=== round 214 ===
-root:   200
-random: 404
-=== round 215 ===
-random: 404
-root:   200
-=== round 216 ===
-root:   200
-random: 404
-=== round 217 ===
-random: 404
-root:   200
-=== round 218 ===
-random: 404
-root:   200
-=== round 219 ===
-random: 404
-root:   200
-=== round 220 ===
-random: 404
-root:   200
-=== round 221 ===
-root:   200
-random: 404
-=== round 222 ===
-root:   200
-random: 404
-=== round 223 ===
-random: 404
-root:   200
-=== round 224 ===
-random: 404
-root:   200
-=== round 225 ===
-curl: (56) Recv failure: Connection reset by peer
-random: 000
-root:   200
-=== round 226 ===
-root:   200
-random: 404
-=== round 227 ===
-root:   200
-random: 404
-=== round 228 ===
-random: 404
-root:   200
-=== round 229 ===
-root:   200
-random: 404
-=== round 230 ===
-root:   200
-random: 404
-=== round 231 ===
-root:   200
-random: 404
-=== round 232 ===
-random: 404
-root:   200
-=== round 233 ===
-random: 404
-root:   200
-=== round 234 ===
-random: 404
-root:   200
-=== round 235 ===
-root:   200
-random: 404
-=== round 236 ===
-root:   200
-random: 404
-=== round 237 ===
-root:   200
-random: 404
-=== round 238 ===
-root:   200
-random: 404
-=== round 239 ===
-root:   200
-random: 404
-=== round 240 ===
-random: 404
-root:   200
-=== round 241 ===
-root:   200
-random: 404
-=== round 242 ===
-root:   200
-random: 404
-=== round 243 ===
-root:   200
-random: 404
-=== round 244 ===
-root:   200
-random: 404
-=== round 245 ===
-root:   200
-random: 404
-=== round 246 ===
-random: 404
-root:   200
-=== round 247 ===
-root:   200
-random: 404
-=== round 248 ===
-random: 404
-root:   200
-=== round 249 ===
-root:   200
-random: 404
-=== round 250 ===
-random: 404
-root:   200
+root:     200
+mixed:    404  /random
+
+=== path validation ===
+/../TEST.TXT:        400
+/foo/../TEST.TXT:    400
+/foo\bar.txt:        400
+/foo:bar.txt:         400
 
 === summary ===
-time:      19 Aug 2026, 09:47 PM
-successes: 496
-failures:  4
-total:     500
+time:      20 Aug 2026, 06:47 PM
+successes: 198
+failures:  2
+total:     200

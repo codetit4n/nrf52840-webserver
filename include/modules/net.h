@@ -7,7 +7,7 @@
 #define GATEWAY {192, 168, 29, 1}
 #define DNS {192, 168, 29, 1}
 
-#define HTTP_SOCK_COUNT 4 // 4 sockets (0-7) for w5500
+#define HTTP_SOCK_COUNT 4 // 4 sockets
 #define HTTP_PORT 8080
 #define MAX_PATH_LEN 64
 
