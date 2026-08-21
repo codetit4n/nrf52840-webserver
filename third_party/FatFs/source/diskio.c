@@ -22,7 +22,7 @@ DSTATUS disk_status(BYTE pdrv /* Physical drive nmuber to identify the drive */
 	if (pdrv != 0) {
 		return STA_NOINIT;
 	}
-	return sd_is_ready() ? 0 : STA_NOINIT;
+	return sd_is_initialized() ? 0 : STA_NOINIT;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -35,7 +35,7 @@ DSTATUS disk_initialize(BYTE pdrv /* Physical drive nmuber to identify the drive
 	if (pdrv != 0) {
 		return STA_NOINIT;
 	}
-	return sd_is_ready() ? 0 : STA_NOINIT;
+	return sd_is_initialized() ? 0 : STA_NOINIT;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -52,7 +52,7 @@ DRESULT disk_read(BYTE pdrv, /* Physical drive nmuber to identify the drive */
 		return RES_PARERR;
 	}
 
-	if (!sd_is_ready()) {
+	if (!sd_is_initialized()) {
 		return RES_NOTRDY;
 	}
 
@@ -105,7 +105,7 @@ DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void* buff) {
 		return RES_PARERR;
 	}
 
-	if (!sd_is_ready()) {
+	if (!sd_is_initialized()) {
 		return RES_NOTRDY;
 	}
 

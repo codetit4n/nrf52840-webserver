@@ -17,7 +17,7 @@ static SemaphoreHandle_t spi_bus_mutex = NULL; // mutex for exclusive access to 
 StaticSemaphore_t spi_bus_mutex_buf;
 static const spi_device_t* active_dev = NULL; // device currently active on the bus
 
-// only one spi master for now
+// Single SPIM
 void spim_init(void) {
 
 	/* ---------------- SCK pin ---------------- */
@@ -46,7 +46,7 @@ void spim_init(void) {
 			     (0 << 2) | // No pull (depends on slave)
 			     (0 << 8) | (0 << 16);
 
-	/* --------Set registers to known state ----- */
+	/* -------- Set registers to known state ----- */
 	SPIM_CONFIG_REG = (0 << 0) |	 // CPHA = 0
 			  (0 << 1) |	 // CPOL = 0
 			  (0 << 2);	 // ORDER = 0 → MSB first
@@ -64,15 +64,12 @@ void spim_init(void) {
 	SPIM_SHORTS_REG = 0;
 	SPIM_INTENCLR_REG = 0xFFFFFFFF;
 
-	// Create mutex for SPI bus access
 	spi_bus_mutex = xSemaphoreCreateMutexStatic(&spi_bus_mutex_buf);
 	if (spi_bus_mutex == NULL) {
 		configASSERT(0);
 		for (;;)
 			;
 	}
-
-	/* ---------------- Enable SPIM0 ---------------- */
 	SPIM_ENABLE_REG = 7;
 }
 
@@ -82,7 +79,7 @@ void spi_device_init(const spi_device_t* dev) {
 		return;
 	}
 
-	// This helps avoid a brief low pulse on CS during configuration.
+	// Helps avoid a brief low pulse on CS during config
 	pin_high(dev->cs_pin);
 
 	GPIO_CNF(dev->cs_pin) = (1 << 0) | // DIR = Output
@@ -91,7 +88,6 @@ void spi_device_init(const spi_device_t* dev) {
 				(0 << 8) | // Standard drive
 				(0 << 16); // SENSE = Disabled
 
-	// Reassert inactive state after configuration.
 	pin_high(dev->cs_pin);
 }
 
@@ -294,12 +290,10 @@ static uint8_t check_buf_in_ram(const uint8_t* buf, size_t len) {
 
 	uintptr_t p = (uintptr_t)buf;
 
-	// Null pointer is never acceptable
 	if (p == 0) {
 		return 0;
 	}
 
-	// For zero-length, require p to be a valid in-range address (not one-past-end)
 	if (len == 0) {
 		return (p >= ram_lo && p < ram_hi) ? 1 : 0;
 	}

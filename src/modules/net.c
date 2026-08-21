@@ -1,5 +1,6 @@
 #include "modules/net.h"
 #include "FreeRTOS.h"
+#include "drivers/sd.h"
 #include "drivers/spi.h"
 #include "ff.h"
 #include "memutils.h"
@@ -8,8 +9,11 @@
 #include "task.h"
 #include "w5500.h"
 
-static const uint8_t http_socks[HTTP_SOCK_COUNT] = {0, 1, 2, 3};
+static const uint8_t http_socks[HTTP_SOCK_COUNT] = {0, 1, 2, 3, 4, 5, 6, 7};
 static uint8_t rx_buf[SPI_MAX_XFER];
+
+static uint8_t net_failure_count = 0;
+static uint8_t net_recovery_requested = 0;
 
 static const uint8_t STATIC_ROOT[] = "0:/static";
 static const uint8_t STATIC_INDEX[] = "0:/static/INDEX.HTML";
@@ -20,12 +24,34 @@ static const uint8_t HTTP_400[] = "HTTP/1.1 400 Bad Request\r\n"
 				  "\r\n"
 				  "<html><body><h1>400 Bad Request</h1></body></html>";
 
+static uint8_t net_is_recovery_requested(void) {
+	return net_recovery_requested;
+}
+
+static void net_set_recovery_requested(uint8_t requested) {
+	net_recovery_requested = requested ? 1 : 0;
+}
+
+static void net_record_failure(void) {
+	if (net_failure_count < UINT8_MAX) {
+		net_failure_count++;
+	}
+
+	if (net_failure_count >= NET_RECOVERY_FAIL_THRESHOLD) {
+		net_set_recovery_requested(1);
+	}
+}
+
+static void net_record_success(void) {
+	net_failure_count = 0;
+}
+
 static uint8_t validate_http_path(const uint8_t path[], int len) {
 	if (path == NULL || len <= 0) {
 		return 0;
 	}
 
-	// 0:/static + URL path + '\0
+	// 0:/static + URL path + '\0'
 	if ((sizeof(STATIC_ROOT) - 1) + (size_t)len + 1 > MAX_PATH_LEN) {
 		return 0;
 	}
@@ -36,7 +62,6 @@ static uint8_t validate_http_path(const uint8_t path[], int len) {
 	}
 
 	for (int i = 0; i < len; i++) {
-
 		uint8_t c = path[i];
 
 		// Reject control characters and non-printable ASCII
@@ -158,9 +183,11 @@ static int32_t net_send_all(uint8_t sock, const uint8_t* buf, size_t len) {
 
 	while (sent < len) {
 		int32_t sr = send(sock, (uint8_t*)(buf + sent), (uint16_t)(len - sent));
+
 		if (sr <= 0) {
 			return sr;
 		}
+
 		sent += (size_t)sr;
 	}
 
@@ -170,7 +197,8 @@ static int32_t net_send_all(uint8_t sock, const uint8_t* buf, size_t len) {
 static int extract_request_path(uint8_t inp[], uint8_t out[], int ptr, int lim) {
 	int i = ptr;
 
-	while (i < lim && inp[i] != ' ' && inp[i] != '\r' && inp[i] != '\n' && inp[i] != '\0') {
+	while (i < lim && inp[i] != ' ' && inp[i] != '?' && inp[i] != '\r' && inp[i] != '\n' &&
+		inp[i] != '\0') {
 
 		out[i - ptr] = inp[i];
 		i++;
@@ -279,6 +307,7 @@ static void log_sock_st(uint8_t sock, uint8_t st) {
 		st == SOCK_SYNRECV || st == SOCK_ESTABLISHED || st == SOCK_FIN_WAIT ||
 		st == SOCK_CLOSING || st == SOCK_TIME_WAIT || st == SOCK_CLOSE_WAIT ||
 		st == SOCK_LAST_ACK) {
+
 		return;
 	}
 
@@ -310,6 +339,8 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 				(uint8_t)(sizeof("NET:") - 1),
 				"socket() FAIL",
 				(uint8_t)(sizeof("socket() FAIL") - 1));
+
+			net_record_failure();
 			break;
 		}
 
@@ -319,24 +350,25 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 				"listen() FAIL",
 				(uint8_t)(sizeof("listen() FAIL") - 1));
 
+			net_record_failure();
 			close(sock);
+			break;
 		}
+
+		net_record_success();
+
 	} break;
 
 	case SOCK_LISTEN:
-		/* Waiting for a client */
 		break;
 
 	case SOCK_ESTABLISHED: {
-
 		TickType_t start_tick = xTaskGetTickCount();
 
 		size_t req_len = 0;
 		uint8_t req_fin = 0;
 
 		for (;;) {
-
-			/* Socket state changed while receiving */
 			if (getSn_SR(sock) != SOCK_ESTABLISHED) {
 				break;
 			}
@@ -344,13 +376,11 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 			uint16_t avail = getSn_RX_RSR(sock);
 
 			if (avail == 0) {
-
 				if ((xTaskGetTickCount() - start_tick) >= REQUEST_TIMEOUT_TICKS) {
-
 					logger_log_literal_len("NET:",
 						(uint8_t)(sizeof("NET:") - 1),
-						"request timeout",
-						(uint8_t)(sizeof("request timeout") - 1));
+						"REQ TIMEOUT",
+						(uint8_t)(sizeof("REQ TIMEOUT") - 1));
 
 					disconnect(sock);
 					break;
@@ -361,7 +391,6 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 			}
 
 			if (req_len >= sizeof(rx_buf)) {
-				/* Request headers too large for buffer */
 				disconnect(sock);
 				break;
 			}
@@ -378,9 +407,9 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 
 			if (req_len >= 4) {
 				for (size_t i = 0; i <= req_len - 4; i++) {
-
 					if (mem_cmp(&rx_buf[i], (const uint8_t*)"\r\n\r\n", 4) ==
 						0) {
+
 						req_fin = 1;
 						break;
 					}
@@ -392,12 +421,10 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 			}
 		}
 
-		/* Socket disappeared while receiving */
 		if (getSn_SR(sock) != SOCK_ESTABLISHED) {
 			break;
 		}
 
-		/* Incomplete request */
 		if (!req_fin) {
 			disconnect(sock);
 			break;
@@ -408,7 +435,9 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 		if (req_len >= 6 && mem_cmp(rx_buf, (const uint8_t*)"GET /", 5) == 0) {
 
 			uint8_t f_name[req_len + 1];
+
 			int f_len = extract_request_path(rx_buf, f_name, 4, req_len);
+
 			f_name[f_len] = '\0';
 
 			if (!validate_http_path(f_name, f_len)) {
@@ -428,24 +457,69 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 				break;
 			}
 
+			if (!sd_is_available()) {
+				sd_set_recovery_requested(1);
+
+				logger_log_literal_len("NET:",
+					(uint8_t)(sizeof("NET:") - 1),
+					"SD UNAVAILABLE",
+					(uint8_t)(sizeof("SD UNAVAILABLE") - 1));
+
+				disconnect(sock);
+				break;
+			}
+
 			uint8_t f_name_appended[MAX_PATH_LEN] = {0};
 
 			if (f_len == 1 && mem_cmp(f_name, "/", 1) == 0) {
+
 				mem_cpy(f_name_appended, STATIC_INDEX, sizeof(STATIC_INDEX) - 1);
+
 				f_name_appended[sizeof(STATIC_INDEX) - 1] = '\0';
 
 			} else {
-
 				size_t static_root_len = sizeof(STATIC_ROOT) - 1;
+
 				mem_cpy(f_name_appended, STATIC_ROOT, static_root_len);
+
 				mem_cpy(f_name_appended + static_root_len, f_name, (size_t)f_len);
-				f_name_appended[static_root_len + (size_t)f_len] = '\0';
+
+				size_t path_len = static_root_len + (size_t)f_len;
+
+				if (f_name[f_len - 1] == '/') {
+					static const uint8_t index_file[] = "index.html";
+
+					if (path_len + sizeof(index_file) > MAX_PATH_LEN) {
+
+						int32_t sr = net_send_all(sock,
+							HTTP_400,
+							sizeof(HTTP_400) - 1);
+
+						if (sr <= 0) {
+							close(sock);
+							break;
+						}
+
+						disconnect(sock);
+						break;
+					}
+
+					mem_cpy(f_name_appended + path_len,
+						index_file,
+						sizeof(index_file) - 1);
+
+					path_len += sizeof(index_file) - 1;
+				}
+
+				f_name_appended[path_len] = '\0';
 			}
 
 			uint8_t ext[MAX_PATH_LEN];
+
 			int ext_len = get_file_extension(f_name_appended, ext, MAX_PATH_LEN);
 
 			FIL file = {0};
+
 			FRESULT fr = f_open(&file, (const char*)f_name_appended, FA_READ);
 
 			if (fr == FR_NO_FILE || fr == FR_NO_PATH) {
@@ -454,7 +528,6 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 					sizeof(HTTP_404) - 1);
 
 				if (sr <= 0) {
-
 					logger_log_literal_len("NET:",
 						(uint8_t)(sizeof("NET:") - 1),
 						"404 send() FAIL",
@@ -469,16 +542,24 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 			}
 
 			if (fr != FR_OK) {
-				/* Other filesystem/storage error */
+				logger_log_literal_len("NET:",
+					(uint8_t)(sizeof("NET:") - 1),
+					"SD FILE OPEN FAILED",
+					(uint8_t)(sizeof("SD FILE OPEN FAILED") - 1));
+
+				sd_set_available(0);
+				sd_set_recovery_requested(1);
+
 				disconnect(sock);
 				break;
 			}
 
-			/* Send HTTP response headers */
 			const char* mime = NULL;
+
 			uint8_t mime_len = get_mime_type((const char*)ext, ext_len, &mime);
 
 			uint8_t http_headers[96];
+
 			uint8_t http_headers_len = build_http_headers(http_headers,
 				sizeof(http_headers),
 				mime,
@@ -503,7 +584,6 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 				break;
 			}
 
-			/* Stream file contents */
 			uint8_t filedata[SPI_MAX_XFER] = {0};
 
 			UINT br = 0;
@@ -522,15 +602,32 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 					break;
 				}
 
+				if (!sd_is_available()) {
+					logger_log_literal_len("NET:",
+						(uint8_t)(sizeof("NET:") - 1),
+						"SD UNAVAILABLE",
+						(uint8_t)(sizeof("SD UNAVAILABLE") - 1));
+
+					failed = 1;
+					break;
+				}
+
 				fr = f_read(&file, filedata, sizeof(filedata), &br);
 
 				if (fr != FR_OK) {
+					logger_log_literal_len("NET:",
+						(uint8_t)(sizeof("NET:") - 1),
+						"SD FILE READ FAILED",
+						(uint8_t)(sizeof("SD FILE READ FAILED") - 1));
+
+					sd_set_available(0);
+					sd_set_recovery_requested(1);
+
 					failed = 1;
 					break;
 				}
 
 				if (br == 0) {
-					/* EOF */
 					break;
 				}
 
@@ -553,13 +650,10 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 			break;
 
 		} else {
-
-			/* Unknown path/method */
 			int32_t sr =
 				net_send_all(sock, (const uint8_t*)HTTP_404, sizeof(HTTP_404) - 1);
 
 			if (sr <= 0) {
-
 				logger_log_literal_len("NET:",
 					(uint8_t)(sizeof("NET:") - 1),
 					"404 send() FAIL",
@@ -576,7 +670,13 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 	} break;
 
 	case SOCK_CLOSE_WAIT:
-		close(sock);
+		disconnect(sock);
+		break;
+
+	case SOCK_FIN_WAIT:
+	case SOCK_CLOSING:
+	case SOCK_TIME_WAIT:
+	case SOCK_LAST_ACK:
 		break;
 
 	default:
@@ -584,15 +684,13 @@ static void handle_http_sock(uint8_t sock, uint8_t* last_st) {
 	}
 }
 
-static void net_task(void* arg) {
-	(void)arg;
-
+static void net_configure(void) {
 	struct wiz_NetInfo_t net = {
-		.mac = MAC,
-		.ip = IP,
-		.sn = SUBNET,
-		.gw = GATEWAY,
-		.dns = DNS,
+		.mac = NET_MAC,
+		.ip = NET_IP,
+		.sn = NET_SUBNET,
+		.gw = NET_GATEWAY,
+		.dns = NET_DNS,
 		.dhcp = NETINFO_STATIC,
 	};
 
@@ -608,10 +706,70 @@ static void net_task(void* arg) {
 	configASSERT(mem_cmp(get_net.sn, net.sn, 4) == 0);
 	configASSERT(mem_cmp(get_net.gw, net.gw, 4) == 0);
 	configASSERT(mem_cmp(get_net.dns, net.dns, 4) == 0);
+}
 
-	uint8_t last_st[HTTP_SOCK_COUNT] = {0xFF, 0xFF, 0xFF, 0xFF};
+static int net_recover(void) {
+	logger_log_literal_len("NET RECOVER:",
+		(uint8_t)(sizeof("NET RECOVER:") - 1),
+		"W5500 RESET",
+		(uint8_t)(sizeof("W5500 RESET") - 1));
+
+	if (w5500_init() != 0) {
+		logger_log_literal_len("NET RECOVER:",
+			(uint8_t)(sizeof("NET RECOVER:") - 1),
+			"W5500 INIT FAIL",
+			(uint8_t)(sizeof("W5500 INIT FAIL") - 1));
+
+		return -1;
+	}
+
+	logger_log_literal_len("NET RECOVER:",
+		(uint8_t)(sizeof("NET RECOVER:") - 1),
+		"CONFIGURING",
+		(uint8_t)(sizeof("CONFIGURING") - 1));
+
+	net_configure();
+
+	logger_log_literal_len("NET RECOVER:",
+		(uint8_t)(sizeof("NET RECOVER:") - 1),
+		"DONE",
+		(uint8_t)(sizeof("DONE") - 1));
+
+	return 0;
+}
+
+static void net_task(void* arg) {
+	(void)arg;
+
+	uint8_t last_st[HTTP_SOCK_COUNT];
+
+	for (uint8_t i = 0; i < HTTP_SOCK_COUNT; i++) {
+		last_st[i] = 0xFF;
+	}
 
 	for (;;) {
+		if (net_is_recovery_requested()) {
+			net_set_recovery_requested(0);
+
+			logger_log_literal_len("NET RECOVER:",
+				(uint8_t)(sizeof("NET RECOVER:") - 1),
+				"STARTED",
+				(uint8_t)(sizeof("STARTED") - 1));
+
+			if (net_recover() == 0) {
+				net_failure_count = 0;
+
+				for (uint8_t i = 0; i < HTTP_SOCK_COUNT; i++) {
+					last_st[i] = 0xFF;
+				}
+
+			} else {
+				logger_log_literal_len("NET RECOVER:",
+					(uint8_t)(sizeof("NET RECOVER:") - 1),
+					"FAILED",
+					(uint8_t)(sizeof("FAILED") - 1));
+			}
+		}
 
 		for (uint8_t i = 0; i < HTTP_SOCK_COUNT; i++) {
 			handle_http_sock(http_socks[i], &last_st[i]);
@@ -622,11 +780,9 @@ static void net_task(void* arg) {
 }
 
 int net_init(void) {
-
 	int8_t st = w5500_init();
 
 	if (st != 0) {
-
 		logger_log_literal_len("NET INIT:",
 			(uint8_t)(sizeof("NET INIT:") - 1),
 			"W5500 INIT FAIL",
@@ -635,10 +791,11 @@ int net_init(void) {
 		return -1;
 	}
 
+	net_configure();
+
 	BaseType_t ok = xTaskCreate(net_task, "net_task", 2048, NULL, 2, NULL);
 
 	if (ok != pdPASS) {
-
 		logger_log_literal_len("NET INIT:",
 			(uint8_t)(sizeof("NET INIT:") - 1),
 			"TASK CREATE FAIL",

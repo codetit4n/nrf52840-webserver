@@ -1,27 +1,27 @@
 === round 1 ===
-mixed:    200  /STYLE.CSS
 root:     200
+mixed:    200  /STYLE.CSS
 === round 2 ===
 root:     200
 mixed:    200  /APP.JS
 === round 3 ===
-mixed:    200  /TEST.TXT
 root:     200
+mixed:    200  /TEST.TXT
 === round 4 ===
 mixed:    200  /favicon.ico
 root:     200
 === round 5 ===
+root:     200
 mixed:    404  /random
-root:     200
 === round 6 ===
-root:     200
 mixed:    200  /STYLE.CSS
+root:     200
 === round 7 ===
 mixed:    200  /APP.JS
 root:     200
 === round 8 ===
-mixed:    200  /TEST.TXT
 root:     200
+mixed:    200  /TEST.TXT
 === round 9 ===
 root:     200
 mixed:    200  /favicon.ico
@@ -32,15 +32,14 @@ root:     200
 root:     200
 mixed:    200  /STYLE.CSS
 === round 12 ===
+root:     200
 mixed:    200  /APP.JS
-root:     200
 === round 13 ===
-mixed:    200  /TEST.TXT
 root:     200
+mixed:    200  /TEST.TXT
 === round 14 ===
-curl: (56) Recv failure: Connection reset by peer
-root:     000
 mixed:    200  /favicon.ico
+root:     200
 === round 15 ===
 root:     200
 mixed:    404  /random
@@ -69,20 +68,20 @@ mixed:    200  /APP.JS
 root:     200
 mixed:    200  /TEST.TXT
 === round 24 ===
-root:     200
 mixed:    200  /favicon.ico
+root:     200
 === round 25 ===
+root:     200
 mixed:    404  /random
-root:     200
 === round 26 ===
-mixed:    200  /STYLE.CSS
 root:     200
+mixed:    200  /STYLE.CSS
 === round 27 ===
 root:     200
 mixed:    200  /APP.JS
 === round 28 ===
-root:     200
 mixed:    200  /TEST.TXT
+root:     200
 === round 29 ===
 mixed:    200  /favicon.ico
 root:     200
@@ -93,14 +92,14 @@ mixed:    404  /random
 mixed:    200  /STYLE.CSS
 root:     200
 === round 32 ===
-mixed:    200  /APP.JS
 root:     200
+mixed:    200  /APP.JS
 === round 33 ===
 root:     200
 mixed:    200  /TEST.TXT
 === round 34 ===
-root:     200
 mixed:    200  /favicon.ico
+root:     200
 === round 35 ===
 root:     200
 mixed:    404  /random
@@ -114,41 +113,42 @@ root:     200
 root:     200
 mixed:    200  /TEST.TXT
 === round 39 ===
+root:     200
 mixed:    200  /favicon.ico
-root:     200
 === round 40 ===
-root:     200
 mixed:    404  /random
+root:     200
 === round 41 ===
 mixed:    200  /STYLE.CSS
 root:     200
 === round 42 ===
-root:     200
 mixed:    200  /APP.JS
+root:     200
 === round 43 ===
-root:     200
 mixed:    200  /TEST.TXT
-=== round 44 ===
 root:     200
+=== round 44 ===
+curl: (56) Recv failure: Connection reset by peer
+root:     000
 mixed:    200  /favicon.ico
 === round 45 ===
 root:     200
 mixed:    404  /random
 === round 46 ===
+root:     200
 mixed:    200  /STYLE.CSS
-root:     200
 === round 47 ===
-root:     200
 mixed:    200  /APP.JS
-=== round 48 ===
-mixed:    200  /TEST.TXT
 root:     200
+=== round 48 ===
+root:     200
+mixed:    200  /TEST.TXT
 === round 49 ===
 mixed:    200  /favicon.ico
 root:     200
 === round 50 ===
-mixed:    404  /random
 root:     200
+mixed:    404  /random
 === round 51 ===
 root:     200
 mixed:    200  /STYLE.CSS
@@ -159,17 +159,17 @@ mixed:    200  /APP.JS
 root:     200
 mixed:    200  /TEST.TXT
 === round 54 ===
-root:     200
 mixed:    200  /favicon.ico
+root:     200
 === round 55 ===
 root:     200
 mixed:    404  /random
 === round 56 ===
+root:     200
 mixed:    200  /STYLE.CSS
-root:     200
 === round 57 ===
-mixed:    200  /APP.JS
 root:     200
+mixed:    200  /APP.JS
 === round 58 ===
 mixed:    200  /TEST.TXT
 root:     200
@@ -177,26 +177,26 @@ root:     200
 mixed:    200  /favicon.ico
 root:     200
 === round 60 ===
-root:     200
 mixed:    404  /random
-=== round 61 ===
 root:     200
+=== round 61 ===
 mixed:    200  /STYLE.CSS
+root:     200
 === round 62 ===
 root:     200
 mixed:    200  /APP.JS
 === round 63 ===
+root:     200
 mixed:    200  /TEST.TXT
-root:     200
 === round 64 ===
-root:     200
 mixed:    200  /favicon.ico
+root:     200
 === round 65 ===
-root:     200
 mixed:    404  /random
-=== round 66 ===
-mixed:    200  /STYLE.CSS
 root:     200
+=== round 66 ===
+root:     200
+mixed:    200  /STYLE.CSS
 === round 67 ===
 root:     200
 mixed:    200  /APP.JS
@@ -207,23 +207,23 @@ mixed:    200  /TEST.TXT
 mixed:    200  /favicon.ico
 root:     200
 === round 70 ===
-root:     200
 mixed:    404  /random
+root:     200
 === round 71 ===
+root:     200
 mixed:    200  /STYLE.CSS
-root:     200
 === round 72 ===
-root:     200
 mixed:    200  /APP.JS
+root:     200
 === round 73 ===
 root:     200
 mixed:    200  /TEST.TXT
 === round 74 ===
-root:     200
 mixed:    200  /favicon.ico
-=== round 75 ===
-mixed:    404  /random
 root:     200
+=== round 75 ===
+root:     200
+mixed:    404  /random
 === round 76 ===
 mixed:    200  /STYLE.CSS
 root:     200
@@ -231,17 +231,17 @@ root:     200
 root:     200
 mixed:    200  /APP.JS
 === round 78 ===
+root:     200
 mixed:    200  /TEST.TXT
-root:     200
 === round 79 ===
-root:     200
 mixed:    200  /favicon.ico
+root:     200
 === round 80 ===
 root:     200
 mixed:    404  /random
 === round 81 ===
-mixed:    200  /STYLE.CSS
 root:     200
+mixed:    200  /STYLE.CSS
 === round 82 ===
 mixed:    200  /APP.JS
 root:     200
@@ -255,14 +255,14 @@ root:     200
 root:     200
 mixed:    404  /random
 === round 86 ===
-mixed:    200  /STYLE.CSS
 root:     200
+mixed:    200  /STYLE.CSS
 === round 87 ===
 mixed:    200  /APP.JS
 root:     200
 === round 88 ===
-root:     200
 mixed:    200  /TEST.TXT
+root:     200
 === round 89 ===
 mixed:    200  /favicon.ico
 root:     200
@@ -270,8 +270,8 @@ root:     200
 mixed:    404  /random
 root:     200
 === round 91 ===
-mixed:    200  /STYLE.CSS
 root:     200
+mixed:    200  /STYLE.CSS
 === round 92 ===
 mixed:    200  /APP.JS
 root:     200
@@ -285,12 +285,11 @@ root:     200
 mixed:    404  /random
 root:     200
 === round 96 ===
-root:     200
 mixed:    200  /STYLE.CSS
+root:     200
 === round 97 ===
-curl: (56) Recv failure: Connection reset by peer
-root:     000
 mixed:    200  /APP.JS
+root:     200
 === round 98 ===
 mixed:    200  /TEST.TXT
 root:     200
@@ -298,8 +297,8 @@ root:     200
 root:     200
 mixed:    200  /favicon.ico
 === round 100 ===
-root:     200
 mixed:    404  /random
+root:     200
 
 === path validation ===
 /../TEST.TXT:        400
@@ -308,7 +307,7 @@ mixed:    404  /random
 /foo:bar.txt:         400
 
 === summary ===
-time:      20 Aug 2026, 06:47 PM
-successes: 198
-failures:  2
+time:      21 Aug 2026, 09:23 PM
+successes: 199
+failures:  1
 total:     200

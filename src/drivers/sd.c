@@ -1,6 +1,6 @@
-#include "FreeRTOS.h"
-#include "board.h"
 #include "drivers/sd.h"
+#include "FreeRTOS.h" // IWYU pragma: keep
+#include "board.h"
 #include "drivers/spi.h"
 #include "modules/logger.h"
 #include "task.h"
@@ -23,9 +23,17 @@ static spi_device_t sd_dev = {.cs_pin = SD_CSN_PIN,
 
 static uint64_t block_count = 0;
 static uint8_t sd_initialized = 0;
+static uint8_t sd_available = 0;
+static uint8_t sd_recovery_req = 0;
 
-uint8_t sd_is_ready(void) {
+uint8_t sd_is_initialized(void) {
 	return sd_initialized;
+}
+uint8_t sd_is_available(void) {
+	return sd_available;
+}
+uint8_t sd_is_recovery_requested(void) {
+	return sd_recovery_req;
 }
 uint64_t sd_get_block_count(void) {
 	return block_count;
@@ -86,8 +94,6 @@ static sd_status_t sd_wait_token(const uint8_t expected, uint32_t timeout_ms) {
 		}
 
 		if (token != 0xFF) {
-			// Unexpected token or SD data-error token.
-
 			logger_log_uint_len("SD WAIT TOKEN:UNEXPECTED TOKEN",
 				sizeof("SD WAIT TOKEN:UNEXPECTED TOKEN") - 1,
 				&token,
@@ -158,9 +164,18 @@ static void sd_end_cmd(void) {
 	spi_clock_idle(&sd_dev, 1);
 }
 
+void sd_set_available(uint8_t available) {
+	sd_available = available ? 1 : 0;
+}
+void sd_set_recovery_requested(uint8_t requested) {
+	sd_recovery_req = requested ? 1 : 0;
+}
+
 sd_status_t sd_init(void) {
 	sd_initialized = 0;
+	sd_available = 0;
 	block_count = 0;
+	sd_dev.frequency = SPI_FREQ_250K; // Init frequency
 
 	spi_device_init(&sd_dev);
 
@@ -387,14 +402,13 @@ sd_status_t sd_init(void) {
 
 	// decode CSD data to get capacity and block count
 	// get C_SIZE
-
 	uint32_t c_size =
 		((uint32_t)(csd[7] & 0x3F) << 16) | ((uint32_t)csd[8] << 8) | (uint32_t)csd[9];
 
 	block_count = ((uint64_t)c_size + 1ULL) * 1024ULL;
 
-	sd_initialized = 1;
 	sd_dev.frequency = SPI_FREQ_2M; // Operating frequency
+	sd_initialized = 1;
 
 	return SD_OK;
 }

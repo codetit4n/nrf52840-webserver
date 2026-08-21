@@ -3,7 +3,7 @@
 #include "board.h"
 #include "semphr.h"
 
-// Static - RAM allocation, no dynamic memory management needed
+// Static - RAM allocation: no dynamic memory management needed
 static uint8_t tx_buf[UART_TX_BUF_SIZE];
 static SemaphoreHandle_t uarte_mutex = NULL;
 
@@ -25,6 +25,28 @@ static TickType_t tx_timeout_ticks(size_t bytes) {
 		timeout_ms = 20;
 
 	return pdMS_TO_TICKS(timeout_ms);
+}
+
+static void uarte_recover(void) {
+
+	UARTE_TASKS_STOPTX_REG = 1; // Stop any ongoing transmission
+
+	// wait until tx is fully stopped
+	for (volatile int i = 0; i < 1000; i++) {
+		if (UARTE_EVENTS_TXSTOPPED_REG)
+			break;
+	}
+
+	UARTE_ENABLE_REG = 0; // Disable UARTE
+
+	// clear events and reset state
+	UARTE_EVENTS_ENDTX_REG = 0;
+	UARTE_EVENTS_TXSTOPPED_REG = 0;
+
+	// to avoid initial garbage transmission
+	pin_high(TX_PIN);
+
+	UARTE_ENABLE_REG = 8; // Enable UARTE
 }
 
 static uint8_t tx_send_blocking(const uint8_t* tx, size_t len) {
@@ -86,28 +108,6 @@ void uarte_init(void) {
 
 	UARTE_ENABLE_REG = 8; // Enable UARTE
 	uarte_mutex = xSemaphoreCreateMutex();
-}
-
-void uarte_recover(void) {
-
-	UARTE_TASKS_STOPTX_REG = 1; // Stop any ongoing transmission
-
-	// wait until tx is fully stopped
-	for (volatile int i = 0; i < 1000; i++) {
-		if (UARTE_EVENTS_TXSTOPPED_REG)
-			break;
-	}
-
-	UARTE_ENABLE_REG = 0; // Disable UARTE
-
-	// clear events and reset state
-	UARTE_EVENTS_ENDTX_REG = 0;
-	UARTE_EVENTS_TXSTOPPED_REG = 0;
-
-	// to avoid initial garbage transmission
-	pin_high(TX_PIN);
-
-	UARTE_ENABLE_REG = 8; // Enable UARTE
 }
 
 // To only be used by the logging lib

@@ -5,8 +5,8 @@ https://loke.sh/blog/nrf52840-web-server
 > [!IMPORTANT]
 > Subscribe to my [Newsletter](https://loke.sh/blog/newsletter/) for updates on this project's technical write-ups.
 
-Writing a web server for the nRF52840 microcontroller to learn complex embedded systems programming
-and for fun. Built using FreeRTOS.
+Writing a web server for the [nRF52840](https://www.nordicsemi.com/Products/nRF52840) microcontroller to learn complex
+embedded systems programming and for fun. Built using FreeRTOS.
 
 ## Commands
 

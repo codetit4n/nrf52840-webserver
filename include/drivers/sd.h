@@ -6,6 +6,7 @@
 #define SD_BLOCK_LEN 512       // fixed for SDHC and SDXC
 #define SD_INIT_CLOCK_BYTES 10 // 10 bytes = 80 clock cycles
 #define SD_R1_POLL_TRIES 10
+#define SD_INIT_RECOVERY_MAX_ATTEMPTS 10
 
 typedef enum {
 	SD_OK = 0,
@@ -22,5 +23,9 @@ typedef enum {
 sd_status_t sd_init(void);
 sd_status_t sd_read_block(uint32_t block, uint8_t* buffer);
 
-uint8_t sd_is_ready(void);
+uint8_t sd_is_initialized(void);
+uint8_t sd_is_available(void);
+uint8_t sd_is_recovery_requested(void);
+void sd_set_recovery_requested(uint8_t requested);
+void sd_set_available(uint8_t available);
 uint64_t sd_get_block_count(void);
