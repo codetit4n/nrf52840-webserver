@@ -2,13 +2,18 @@
 
 This file tracks implementation progress for the nRF52840 web server.
 
-## Current milestone: v1.0
+## v1.0 goal
 
-Build a low-cost embedded web server around the nRF52840 using the W5500 for Ethernet and a microSD card for persistent file storage.
+Build a low-cost embedded web server around the nRF52840 using:
 
-The system uses a shared SPI bus protected by FreeRTOS synchronization, a ring-buffer logger over UARTE, a custom SDHC/SDXC driver, FatFs in read-only mode, and a networking task based on the W5500 ioLibrary.
+- W5500 Ethernet
+- microSD storage
+- one shared SPI bus
+- FreeRTOS
+- FatFs
+- UARTE logging
 
-The v1.0 milestone is focused on serving static files directly from the SD card over HTTP while keeping the W5500 and SD card operating on the same SPI bus.
+The v1.0 milestone serves static files directly from the SD card over HTTP.
 
 ---
 
@@ -17,107 +22,80 @@ The v1.0 milestone is focused on serving static files directly from the SD card 
 - [x] UARTE driver
 
 - [x] Ring-buffer logger
-  - [x] Queue complete log lines before transmission
-  - [x] Logger flush support
   - [x] Literal logging
   - [x] Hex logging
   - [x] Integer logging
+  - [x] Logger flush support
 
 - [x] Generic SPI master driver
   - [x] FreeRTOS mutex-protected shared bus
-  - [x] Multi-device configuration
-  - [x] Per-device SPI configuration
+  - [x] Per-device configuration
   - [x] Blocking TX/RX with timeout
   - [x] EasyDMA-safe buffer handling
-  - [x] Support W5500 and SD card on the same bus
+  - [x] Shared W5500 + SD operation
 
 ---
 
-## System startup
-
-- [x] Ordered startup initialization
-  - [x] Initialize the SD card
-  - [x] Mount the filesystem
-  - [x] Initialize the W5500
-  - [x] Create the networking task
-  - [x] Delete the startup task after initialization
-
-- [x] Return initialization errors instead of halting inside `net_init()`
-
----
-
-## SD card support
+## SD card
 
 - [x] SDHC/SDXC initialization in SPI mode
   - [x] CMD0
   - [x] CMD8
   - [x] CMD55 + ACMD41
   - [x] CMD58
-  - [x] SDHC/SDXC detection
   - [x] Reject unsupported legacy cards
 
-- [x] Read CSD using CMD9
-  - [x] Keep CS asserted for the complete data transaction
-  - [x] Wait for the `0xFE` data token
-  - [x] Read the 16-byte CSD
-  - [x] Read and discard CRC bytes
-
-- [x] Decode card block count from CSD v2
-
-- [x] Read a single 512-byte block using CMD17
-  - [x] Build CMD17 argument from the requested block number
-  - [x] Send block number in big-endian wire order
-  - [x] Wait for the `0xFE` data token
-  - [x] Read 512 data bytes
-  - [x] Read and discard CRC bytes
-
+- [x] Read and decode CSD v2 using CMD9
+- [x] Determine card block count
+- [x] Read 512-byte blocks using CMD17
 - [x] Verify block 0 against a PC-side sector dump
 - [x] Verify repeated raw reads are stable
-- [ ] Verify a non-zero block against a PC-side sector dump
-- [ ] Add CRC16 validation for received data blocks
 
-- [x] Read-only block-device API
-  - [x] `sd_status_t`
-  - [x] Specific error codes
+- [x] Read-only SD block-device API
+  - [x] Error/status codes
   - [x] Initialization-state tracking
   - [x] Block-range validation
-  - [x] Private command helpers
-  - [x] Defined command transaction ownership
-  - [x] SD initialization API
+  - [x] Initialization API
   - [x] Block-read API
-  - [x] Readiness query
   - [x] Block-count query
 
-> Current limitation: only SDHC and SDXC cards are supported. SDSC and SD v1 cards are intentionally rejected.
+- [x] Runtime SD recovery
+  - [x] Track raw initialization state
+  - [x] Track filesystem availability
+  - [x] Trigger recovery after SD access failures
+  - [x] Bounded recovery attempts
+  - [x] Remount FatFs after successful recovery
+
+> v1.0 supports SDHC and SDXC cards only.
 
 ---
 
 ## Shared SPI integration
 
-- [x] Run W5500 and SD card on the same SPI bus
-- [x] Protect shared bus access using a FreeRTOS mutex
-- [x] Verify both devices work independently
-- [x] Verify SD reads while networking is active
-- [x] Capture SD/W5500 transactions using a logic analyzer
-- [x] Verify SD and W5500 CS lines do not overlap
-- [x] Verify SD trailing clocks after deselection
+- [x] W5500 and SD card share one SPI bus
+- [x] Separate chip-select lines
+- [x] FreeRTOS mutex protection
+- [x] Verify both devices independently
+- [x] Verify SD access while networking is active
+- [x] Logic-analyzer verification
+- [x] Verify CS lines do not overlap
+- [x] Verify SD trailing clocks
 
-### SD module MISO contention
+### SD MISO contention
 
-- [x] Identify intermittent corruption after SD → W5500 transitions
-- [x] Trace the SD module MISO path
-- [x] Identify always-enabled SN74HC125 MISO buffer
-- [x] Confirm MISO buffer OE is tied to GND instead of SD CS
-- [x] Confirm shared-MISO contention as the main hardware issue
-- [x] Add a 2 kΩ series resistor to the SD module MISO line as a workaround
-- [x] Verify major reliability improvement after adding the resistor
-- [ ] Replace workaround with proper HC125 OE control as a post-v1 hardware experiment
+- [x] Identify corruption after SD -> W5500 transitions
+- [x] Trace SD module MISO path
+- [x] Identify always-enabled SN74HC125 output
+- [x] Confirm OE is tied low
+- [x] Confirm shared-MISO contention
+- [x] Add 2 kΩ series resistor on SD MISO
+- [x] Verify major reliability improvement
 
-> Current hardware workaround:
->
-> `SD module MISO -> 2 kΩ -> shared MISO`
->
-> The proper hardware fix is to make the HC125 MISO output-enable follow SD CS so the module releases MISO when deselected.
+Current workaround:
+
+```text
+SD module MISO -> 2 kΩ -> shared MISO
+```
 
 ---
 
@@ -130,15 +108,12 @@ The v1.0 milestone is focused on serving static files directly from the SD card 
   - [x] `disk_initialize()`
   - [x] `disk_read()`
   - [x] `disk_ioctl()`
-  - [x] Multi-sector buffer handling
+  - [x] Multi-sector reads
   - [x] Sector-range validation
 
-- [x] Mount the SD card
-- [x] Open and read files from the SD card
-- [x] Read `/INDEX.HTML`
+- [x] Mount SD card
+- [x] Open and read files
 - [x] Read files while networking is active
-- [ ] Wrap FatFs access in a small filesystem module
-- [ ] Add write support later, if needed
 
 ---
 
@@ -146,50 +121,47 @@ The v1.0 milestone is focused on serving static files directly from the SD card 
 
 - [x] Port W5500 ioLibrary
 - [x] Static IPv4 configuration
-- [x] Create TCP server sockets
-- [x] Use multiple W5500 hardware sockets
-- [x] Add readable socket-state logging
+- [x] TCP server sockets
+- [x] Use all 8 W5500 hardware sockets
+- [x] Readable socket-state logging
 - [x] Receive HTTP requests
 - [x] Detect complete HTTP headers using `\r\n\r\n`
-- [x] Add request timeout handling
-- [x] Add request-processing timeout
-- [x] Test repeated HTTP requests
-- [x] Test concurrent HTTP requests
-- [x] Handle partial `send()` results
-  - [x] Add `net_send_all()`
-  - [x] Use it for HTTP headers
-  - [x] Use it for file chunks
-  - [x] Use it for 404 responses
+- [x] Request timeout handling
+- [x] Request-processing timeout
+- [x] Handle partial `send()` results with `net_send_all()`
+- [x] Sequential request testing
+- [x] Concurrent request testing
 
-### Known networking limitation
+### Runtime network recovery
 
-- [ ] Investigate occasional W5500 socket/listen failure after repeated requests
-
-Observed occasionally during stress testing:
-
-- TCP connection reset by peer
-- `listen()` occasionally returns `SOCKERR_SOCKCLOSED`
-- socket reaches `SOCK_INIT` successfully before the failed `listen()`
-
-This is currently considered a known v1 limitation and is not blocking the remaining application-layer work.
+- [x] Detect repeated `socket()` / `listen()` failures
+- [x] Trigger recovery after consecutive failures
+- [x] Reset and reinitialize W5500
+- [x] Restore network configuration
+- [x] Reset cached socket states
+- [x] Recover networking without resetting the nRF52840
 
 ---
 
 ## Web server
 
-- [x] Serve files directly from the SD card
-- [x] Map URL paths to FatFs paths
-  - [x] `/` -> `0:/INDEX.HTML`
-  - [x] General paths such as `/test.txt`
-  - [x] Nested paths supported by FatFs path mapping
+- [x] Serve files directly from SD card
+- [x] Use `0:/static` as the web root
+
+- [x] URL mapping
+  - [x] `/` -> `0:/static/INDEX.HTML`
+  - [x] `/file.ext` -> `0:/static/file.ext`
+  - [x] Nested paths
+  - [x] `/foo/` -> `0:/static/foo/index.html`
+  - [x] Ignore URL query strings when resolving files
 
 - [x] Stream files instead of loading them fully into RAM
-  - [x] Read files in `SPI_MAX_XFER` chunks
-  - [x] Fully transmit each chunk before reading the next one
+- [x] Read and transmit files in chunks
 
-- [x] Generate HTTP `200 OK` response headers
-- [x] Build response headers dynamically
-- [x] Send complete response headers in one buffer
+- [x] HTTP `200 OK` responses
+- [x] HTTP `400 Bad Request`
+- [x] HTTP `404 Not Found`
+- [x] `Connection: close`
 
 - [x] MIME type detection
   - [x] HTML / HTM
@@ -200,78 +172,57 @@ This is currently considered a known v1 limitation and is not blocking the remai
   - [x] JPG / JPEG
   - [x] SVG
   - [x] ICO
-  - [x] Unknown file types -> `application/octet-stream`
+  - [x] Unknown -> `application/octet-stream`
 
-- [x] 404 responses for missing files
-- [x] Browser rendering of HTML
-- [x] Browser rendering of plain-text files
+### Path validation
 
-- [ ] Basic path sanitization
-  - [ ] Reject `..`
-  - [ ] Reject malformed paths
-  - [ ] Enforce maximum path length
-  - [ ] Prevent paths from escaping the intended web root
-
-- [ ] Add SD read-error recovery
-- [ ] Final mixed-file stress test
+- [x] Require paths to begin with `/`
+- [x] Reject `..`
+- [x] Reject `\`
+- [x] Reject `:`
+- [x] Reject non-printable characters
+- [x] Enforce maximum path length
+- [x] Prevent escaping the static web root
 
 ---
 
-## v1.0 validation
+## Release configuration
 
-- [ ] Test HTML page with referenced CSS
-- [ ] Test HTML page with referenced JavaScript
-- [ ] Test image loading from SD card
-- [ ] Test favicon loading
-- [ ] Test missing resources / 404 handling
-- [ ] Test unknown file extension fallback
-- [ ] Test invalid paths
-- [ ] Run 500-1000 sequential HTTP requests
-- [ ] Run concurrent request stress test
-- [ ] Test mixed static-file requests
-- [ ] Restore intended SPI frequencies
-- [ ] Repeat reliability tests at final SPI frequencies
+- [x] W5500 SPI frequency: 16 MHz
+- [x] SD initialization frequency: 250 kHz
+- [x] SD normal-operation frequency: 2 MHz
+- [x] Final mixed-file stress test completed
+- [x] Concurrent request testing completed
+- [x] SD recovery tested
+- [x] Network recovery tested
+- [x] Browser serving tested
+- [x] HTML/CSS/JS/image/favicon serving tested individually
 
 ---
 
-## Cleanup
+## Remaining v1.0 release work
 
 - [ ] Remove temporary debug instrumentation
 - [ ] Remove obsolete TODOs
-- [ ] Keep useful runtime error logging
-- [ ] Review networking error paths
-- [ ] Review stack usage and temporary buffers
+- [ ] Keep useful runtime error/recovery logs
 - [ ] Review `MAX_PATH_LEN`
 - [ ] Review timeout values
+- [ ] Review stack usage and temporary buffers
 
----
+- [ ] Update README
+  - [ ] Architecture overview
+  - [ ] Wiring / pin table
+  - [ ] SD card `/static` layout
+  - [ ] SPI frequencies
+  - [ ] 2 kΩ SD MISO workaround
+  - [ ] Runtime recovery behavior
+  - [ ] Current limitations
 
-## Documentation and release
-
-- [ ] Architecture diagram
-- [ ] Shared SPI wiring table
-- [ ] HTTP request/file-serving flow diagram
-- [ ] Document SD-module MISO contention issue
-- [ ] Document the 2 kΩ MISO workaround
-- [ ] Document known networking limitation
 - [ ] Update build log
-- [ ] README cleanup
-- [ ] Add setup instructions for SD-card web files
-- [ ] Demo video
-- [ ] Final v1.0 stress test
-- [ ] Tag `v1.0`
-
----
-
-## Post-v1 ideas
-
-- [ ] Proper HC125 OE modification on the SD module
-- [ ] Filesystem abstraction module
-- [ ] SD CRC16 validation
-- [ ] SD write support
-- [ ] More HTTP methods
-- [ ] HTTP keep-alive
-- [ ] HTTP caching / ETag support
-- [ ] Directory handling
-- [ ] Dynamic responses
-- [ ] Custom PCB
+- [ ] Add architecture / flow diagrams
+- [ ] Demo video or screenshots
+- [ ] Final clean build
+- [ ] Final flash and smoke test
+- [ ] Final commit
+- [ ] Tag `v1.0.0`
+- [ ] Publish release
