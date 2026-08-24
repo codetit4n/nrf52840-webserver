@@ -1,0 +1,156 @@
+(kicad_sch
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "37f7ddc9-6743-427d-8e67-6dc181c0e547")
+	(paper "User" 177.8 127)
+	(lib_symbols)
+	(rectangle
+		(start 97.79 83.82)
+		(end 149.86 102.87)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid "97fba925-b369-46e0-acd0-717e8f5d40cd")
+	)
+	(rectangle
+		(start 53.34 19.05)
+		(end 120.65 39.37)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid "9abb284a-06a0-4059-a44f-ef81e67a5d1f")
+	)
+	(rectangle
+		(start 30.48 83.82)
+		(end 76.2 102.87)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid "a10b9e86-8fde-4821-94da-9362ab09f09a")
+	)
+	(text "W5500\nEthernet Controller\nCS: W5500_CS"
+		(exclude_from_sim no)
+		(at 52.07 93.98 0)
+		(effects
+			(font
+				(size 2.54 2.54)
+			)
+		)
+		(uuid "6c11dd47-147c-4f70-8b91-e661fbc757e7")
+	)
+	(text "microSD\nCard\nCS: SD_CS\nMISO: 2kΩ series resistor"
+		(exclude_from_sim no)
+		(at 123.19 93.98 0)
+		(effects
+			(font
+				(size 2.54 2.54)
+			)
+		)
+		(uuid "d927c043-5135-452f-93b5-07794f016388")
+	)
+	(text "nRF52840 DK"
+		(exclude_from_sim no)
+		(at 86.36 30.48 0)
+		(effects
+			(font
+				(size 2.54 2.54)
+			)
+		)
+		(uuid "deac0f84-f89a-4e1b-bfe4-7feea34c4748")
+	)
+	(text "Shared SPI Bus\nSCK / MOSI / MISO"
+		(exclude_from_sim no)
+		(at 87.63 57.15 0)
+		(effects
+			(font
+				(size 2.54 2.54)
+			)
+		)
+		(uuid "f2cb7dbc-1fcc-4853-9616-31aa1401562a")
+	)
+	(junction
+		(at 86.36 71.12)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "f7f77e62-2d4d-483c-9c4c-93b18d760289")
+	)
+	(wire
+		(pts
+			(xy 86.36 39.37) (xy 86.36 52.07)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "08b943c3-68b1-4a1d-a9c0-d2a6aea26883")
+	)
+	(wire
+		(pts
+			(xy 53.34 71.12) (xy 86.36 71.12)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0ef4eaef-434d-481a-830f-67e6df327e07")
+	)
+	(wire
+		(pts
+			(xy 86.36 71.12) (xy 120.65 71.12)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "59b63f68-d628-4c07-ba84-afa282a9bd6e")
+	)
+	(wire
+		(pts
+			(xy 53.34 71.12) (xy 53.34 83.82)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "667ca10b-7700-4d08-83ce-237d55a94d04")
+	)
+	(wire
+		(pts
+			(xy 120.65 71.12) (xy 120.65 83.82)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8319b924-1a10-466c-b9e1-394418030fc7")
+	)
+	(wire
+		(pts
+			(xy 86.36 62.23) (xy 86.36 71.12)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "cb7616e1-49e9-4d4b-bf1e-7e8d90eb9ebf")
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+	(embedded_fonts no)
+)

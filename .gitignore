@@ -58,3 +58,19 @@ build/
 .cache/
 compile_commands.json
 misc/
+.history
+
+# KiCad backups
+*-backups/
+*.bak
+
+# Autosave / rescue files
+_autosave-*
+*.kicad_prl
+
+# Lock files
+~*.lck
+*.lck
+
+# Temporary files
+*.tmp

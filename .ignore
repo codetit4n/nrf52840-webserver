@@ -1,0 +1,5 @@
+# for ignoring in nvim-telescope and ripgrep
+freertos/FreeRTOS-Kernel
+third_party/Wiznet-ioLibrary
+third_party/nrfx
+third_party/cmsis
