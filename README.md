@@ -31,7 +31,7 @@ A small web server built on the [nRF52840](https://www.nordicsemi.com/Products/n
 
 ### Physical Setup
 
-<img src="./docs/physical-setup.png" alt="Physical setup" width="550">
+<img src="./docs/physical-setup.png" alt="Physical setup" width="500" height="550">
 
 ### Demo
 
