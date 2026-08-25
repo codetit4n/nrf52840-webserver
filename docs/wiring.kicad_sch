@@ -3178,6 +3178,28 @@
 			(embedded_fonts no)
 		)
 	)
+	(rectangle
+		(start 124.46 97.79)
+		(end 146.05 104.14)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid "ec7d6281-b422-450e-a30d-f32d259a6cba")
+	)
+	(text "Onboard Debugger\nUSB VCOM"
+		(exclude_from_sim no)
+		(at 135.89 101.6 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "b54a29c1-8f27-4720-addb-f9fc1c31da99")
+	)
 	(junction
 		(at 96.52 113.03)
 		(diameter 0)
@@ -3194,7 +3216,7 @@
 		(at 171.45 115.57)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "bd216bef-5810-45c7-bbc9-54ad1eab59e5")
+		(uuid "ff448972-84f5-41ce-b5bc-8add916e3559")
 	)
 	(wire
 		(pts
@@ -3278,7 +3300,7 @@
 	)
 	(wire
 		(pts
-			(xy 201.93 99.06) (xy 201.93 200.66)
+			(xy 201.93 105.41) (xy 201.93 200.66)
 		)
 		(stroke
 			(width 0)
@@ -3328,6 +3350,16 @@
 	)
 	(wire
 		(pts
+			(xy 157.48 109.22) (xy 157.48 95.25)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5e4b0198-d04b-47b5-b05c-f3fd51283d8e")
+	)
+	(wire
+		(pts
 			(xy 101.6 95.25) (xy 101.6 104.14)
 		)
 		(stroke
@@ -3338,7 +3370,7 @@
 	)
 	(wire
 		(pts
-			(xy 171.45 102.87) (xy 171.45 115.57)
+			(xy 171.45 109.22) (xy 171.45 115.57)
 		)
 		(stroke
 			(width 0)
@@ -3358,7 +3390,7 @@
 	)
 	(wire
 		(pts
-			(xy 181.61 97.79) (xy 167.64 97.79)
+			(xy 181.61 100.33) (xy 167.64 100.33)
 		)
 		(stroke
 			(width 0)
@@ -3378,6 +3410,16 @@
 	)
 	(wire
 		(pts
+			(xy 106.68 100.33) (xy 124.46 100.33)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7aec21f2-3e91-41cc-8a9d-f77772e6c82a")
+	)
+	(wire
+		(pts
 			(xy 101.6 135.89) (xy 101.6 127)
 		)
 		(stroke
@@ -3388,7 +3430,7 @@
 	)
 	(wire
 		(pts
-			(xy 181.61 196.85) (xy 181.61 97.79)
+			(xy 181.61 196.85) (xy 181.61 100.33)
 		)
 		(stroke
 			(width 0)
@@ -3398,7 +3440,7 @@
 	)
 	(wire
 		(pts
-			(xy 167.64 97.79) (xy 167.64 95.25)
+			(xy 167.64 100.33) (xy 167.64 95.25)
 		)
 		(stroke
 			(width 0)
@@ -3408,7 +3450,7 @@
 	)
 	(wire
 		(pts
-			(xy 165.1 99.06) (xy 201.93 99.06)
+			(xy 165.1 105.41) (xy 201.93 105.41)
 		)
 		(stroke
 			(width 0)
@@ -3428,16 +3470,6 @@
 	)
 	(wire
 		(pts
-			(xy 157.48 95.25) (xy 157.48 102.87)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a9178f9e-5c28-4e29-a157-bb35c7b5dc78")
-	)
-	(wire
-		(pts
 			(xy 234.95 68.58) (xy 226.06 64.77)
 		)
 		(stroke
@@ -3448,7 +3480,7 @@
 	)
 	(wire
 		(pts
-			(xy 165.1 95.25) (xy 165.1 99.06)
+			(xy 165.1 95.25) (xy 165.1 105.41)
 		)
 		(stroke
 			(width 0)
@@ -3468,6 +3500,16 @@
 	)
 	(wire
 		(pts
+			(xy 157.48 109.22) (xy 171.45 109.22)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b91b8b74-65c7-45ef-a245-49c3766f3ba6")
+	)
+	(wire
+		(pts
 			(xy 69.85 193.04) (xy 171.45 193.04)
 		)
 		(stroke
@@ -3475,6 +3517,16 @@
 			(type default)
 		)
 		(uuid "b96a947d-bae7-4e74-9b8d-72f1b4100022")
+	)
+	(wire
+		(pts
+			(xy 106.68 95.25) (xy 106.68 100.33)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ba6fadf1-1ac3-460b-89b9-f7a49d84245f")
 	)
 	(wire
 		(pts
@@ -3568,16 +3620,6 @@
 	)
 	(wire
 		(pts
-			(xy 157.48 102.87) (xy 171.45 102.87)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "e11fadfa-c2df-4191-9d4a-6535eaa3bf72")
-	)
-	(wire
-		(pts
 			(xy 154.94 95.25) (xy 154.94 118.11)
 		)
 		(stroke
@@ -3636,15 +3678,15 @@
 		)
 		(uuid "fe966ae6-3dfd-45fb-8569-f27a59a6060e")
 	)
-	(label "SD_CS"
-		(at 107.95 130.81 0)
+	(label "UARTE_TX"
+		(at 109.22 100.33 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify left bottom)
 		)
-		(uuid "0f862b57-9a0d-4b20-81ca-5d6517fdc332")
+		(uuid "043be721-b41f-45b2-8de6-92cbb3b3eaaa")
 	)
 	(label "SPI_SCK"
 		(at 96.52 113.03 0)
@@ -3657,14 +3699,14 @@
 		(uuid "16dc43d5-56a5-477f-8c81-58ec8da0a36d")
 	)
 	(label "W5500_CS"
-		(at 68.58 110.49 0)
+		(at 166.37 105.41 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify left bottom)
 		)
-		(uuid "5113f082-296a-4bf0-82e6-db4471d9a034")
+		(uuid "95fb7a28-7860-40aa-83cc-163368f49b84")
 	)
 	(label "SPI_MISO"
 		(at 171.45 115.57 0)
@@ -3685,6 +3727,16 @@
 			(justify left bottom)
 		)
 		(uuid "b348acfa-02c3-4cb4-8b4e-8bfd52cae832")
+	)
+	(label "SD_CS"
+		(at 101.6 104.14 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "f961e4ef-d6cb-43bd-a25b-732891bd1eda")
 	)
 	(symbol
 		(lib_id "power:GND")

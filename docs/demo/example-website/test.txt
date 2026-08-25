@@ -1,0 +1,13 @@
+EDGE SERVER RESPONSE
+====================
+
+Success! This file was read from the SD card and delivered to your browser by the embedded webserver.
+
+Storage:  SD card
+File:     /static/test.txt
+Status:   200 OK
+
+No cloud. No framework. Just embedded hardware serving the web.
+
+Built by Lokesh
+https://loke.sh

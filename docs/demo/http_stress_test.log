@@ -1,18 +1,18 @@
 === round 1 ===
-root:     200
 mixed:    200  /STYLE.CSS
+root:     200
 === round 2 ===
 root:     200
 mixed:    200  /APP.JS
 === round 3 ===
-root:     200
 mixed:    200  /TEST.TXT
+root:     200
 === round 4 ===
+root:     200
 mixed:    200  /favicon.ico
-root:     200
 === round 5 ===
-root:     200
 mixed:    404  /random
+root:     200
 === round 6 ===
 mixed:    200  /STYLE.CSS
 root:     200
@@ -26,86 +26,86 @@ mixed:    200  /TEST.TXT
 root:     200
 mixed:    200  /favicon.ico
 === round 10 ===
+root:     200
 mixed:    404  /random
-root:     200
 === round 11 ===
-root:     200
 mixed:    200  /STYLE.CSS
+root:     200
 === round 12 ===
 root:     200
 mixed:    200  /APP.JS
 === round 13 ===
-root:     200
 mixed:    200  /TEST.TXT
+root:     200
 === round 14 ===
+root:     200
 mixed:    200  /favicon.ico
-root:     200
 === round 15 ===
-root:     200
 mixed:    404  /random
+root:     200
 === round 16 ===
-root:     200
 mixed:    200  /STYLE.CSS
-=== round 17 ===
-mixed:    200  /APP.JS
 root:     200
+=== round 17 ===
+root:     200
+mixed:    200  /APP.JS
 === round 18 ===
 root:     200
 mixed:    200  /TEST.TXT
 === round 19 ===
-mixed:    200  /favicon.ico
 root:     200
+mixed:    200  /favicon.ico
 === round 20 ===
 mixed:    404  /random
 root:     200
 === round 21 ===
-root:     200
 mixed:    200  /STYLE.CSS
+root:     200
 === round 22 ===
-root:     200
 mixed:    200  /APP.JS
+root:     200
 === round 23 ===
-root:     200
 mixed:    200  /TEST.TXT
-=== round 24 ===
-mixed:    200  /favicon.ico
 root:     200
+=== round 24 ===
+root:     200
+mixed:    200  /favicon.ico
 === round 25 ===
 root:     200
 mixed:    404  /random
 === round 26 ===
-root:     200
 mixed:    200  /STYLE.CSS
+root:     200
 === round 27 ===
 root:     200
 mixed:    200  /APP.JS
 === round 28 ===
+root:     200
 mixed:    200  /TEST.TXT
-root:     200
 === round 29 ===
-mixed:    200  /favicon.ico
 root:     200
+mixed:    200  /favicon.ico
 === round 30 ===
 root:     200
 mixed:    404  /random
 === round 31 ===
+root:     200
 mixed:    200  /STYLE.CSS
-root:     200
 === round 32 ===
-root:     200
 mixed:    200  /APP.JS
+root:     200
 === round 33 ===
 root:     200
 mixed:    200  /TEST.TXT
 === round 34 ===
+root:     200
 mixed:    200  /favicon.ico
-root:     200
 === round 35 ===
-root:     200
 mixed:    404  /random
-=== round 36 ===
 root:     200
+=== round 36 ===
 mixed:    200  /STYLE.CSS
+root:     200
 === round 37 ===
 mixed:    200  /APP.JS
 root:     200
@@ -113,23 +113,22 @@ root:     200
 root:     200
 mixed:    200  /TEST.TXT
 === round 39 ===
-root:     200
 mixed:    200  /favicon.ico
+root:     200
 === round 40 ===
+root:     200
 mixed:    404  /random
-root:     200
 === round 41 ===
-mixed:    200  /STYLE.CSS
 root:     200
+mixed:    200  /STYLE.CSS
 === round 42 ===
 mixed:    200  /APP.JS
 root:     200
 === round 43 ===
-mixed:    200  /TEST.TXT
 root:     200
+mixed:    200  /TEST.TXT
 === round 44 ===
-curl: (56) Recv failure: Connection reset by peer
-root:     000
+root:     200
 mixed:    200  /favicon.ico
 === round 45 ===
 root:     200
@@ -141,8 +140,8 @@ mixed:    200  /STYLE.CSS
 mixed:    200  /APP.JS
 root:     200
 === round 48 ===
-root:     200
 mixed:    200  /TEST.TXT
+root:     200
 === round 49 ===
 mixed:    200  /favicon.ico
 root:     200
@@ -153,8 +152,8 @@ mixed:    404  /random
 root:     200
 mixed:    200  /STYLE.CSS
 === round 52 ===
-root:     200
 mixed:    200  /APP.JS
+root:     200
 === round 53 ===
 root:     200
 mixed:    200  /TEST.TXT
@@ -165,26 +164,26 @@ root:     200
 root:     200
 mixed:    404  /random
 === round 56 ===
-root:     200
 mixed:    200  /STYLE.CSS
-=== round 57 ===
 root:     200
+=== round 57 ===
 mixed:    200  /APP.JS
+root:     200
 === round 58 ===
 mixed:    200  /TEST.TXT
 root:     200
 === round 59 ===
+root:     200
 mixed:    200  /favicon.ico
-root:     200
 === round 60 ===
+root:     200
 mixed:    404  /random
-root:     200
 === round 61 ===
+root:     200
 mixed:    200  /STYLE.CSS
-root:     200
 === round 62 ===
-root:     200
 mixed:    200  /APP.JS
+root:     200
 === round 63 ===
 root:     200
 mixed:    200  /TEST.TXT
@@ -192,20 +191,20 @@ mixed:    200  /TEST.TXT
 mixed:    200  /favicon.ico
 root:     200
 === round 65 ===
+root:     200
 mixed:    404  /random
-root:     200
 === round 66 ===
-root:     200
 mixed:    200  /STYLE.CSS
-=== round 67 ===
 root:     200
+=== round 67 ===
 mixed:    200  /APP.JS
+root:     200
 === round 68 ===
 root:     200
 mixed:    200  /TEST.TXT
 === round 69 ===
-mixed:    200  /favicon.ico
 root:     200
+mixed:    200  /favicon.ico
 === round 70 ===
 mixed:    404  /random
 root:     200
@@ -213,14 +212,14 @@ root:     200
 root:     200
 mixed:    200  /STYLE.CSS
 === round 72 ===
-mixed:    200  /APP.JS
 root:     200
+mixed:    200  /APP.JS
 === round 73 ===
 root:     200
 mixed:    200  /TEST.TXT
 === round 74 ===
-mixed:    200  /favicon.ico
 root:     200
+mixed:    200  /favicon.ico
 === round 75 ===
 root:     200
 mixed:    404  /random
@@ -231,26 +230,26 @@ root:     200
 root:     200
 mixed:    200  /APP.JS
 === round 78 ===
-root:     200
 mixed:    200  /TEST.TXT
+root:     200
 === round 79 ===
-mixed:    200  /favicon.ico
 root:     200
+mixed:    200  /favicon.ico
 === round 80 ===
-root:     200
 mixed:    404  /random
+root:     200
 === round 81 ===
-root:     200
 mixed:    200  /STYLE.CSS
+root:     200
 === round 82 ===
+root:     200
 mixed:    200  /APP.JS
-root:     200
 === round 83 ===
+root:     200
 mixed:    200  /TEST.TXT
-root:     200
 === round 84 ===
-mixed:    200  /favicon.ico
 root:     200
+mixed:    200  /favicon.ico
 === round 85 ===
 root:     200
 mixed:    404  /random
@@ -258,8 +257,8 @@ mixed:    404  /random
 root:     200
 mixed:    200  /STYLE.CSS
 === round 87 ===
-mixed:    200  /APP.JS
 root:     200
+mixed:    200  /APP.JS
 === round 88 ===
 mixed:    200  /TEST.TXT
 root:     200
@@ -270,32 +269,32 @@ root:     200
 mixed:    404  /random
 root:     200
 === round 91 ===
-root:     200
 mixed:    200  /STYLE.CSS
+root:     200
 === round 92 ===
 mixed:    200  /APP.JS
 root:     200
 === round 93 ===
-root:     200
 mixed:    200  /TEST.TXT
+root:     200
 === round 94 ===
 mixed:    200  /favicon.ico
 root:     200
 === round 95 ===
-mixed:    404  /random
 root:     200
+mixed:    404  /random
 === round 96 ===
 mixed:    200  /STYLE.CSS
 root:     200
 === round 97 ===
+root:     200
 mixed:    200  /APP.JS
-root:     200
 === round 98 ===
+root:     200
 mixed:    200  /TEST.TXT
-root:     200
 === round 99 ===
-root:     200
 mixed:    200  /favicon.ico
+root:     200
 === round 100 ===
 mixed:    404  /random
 root:     200
@@ -307,7 +306,7 @@ root:     200
 /foo:bar.txt:         400
 
 === summary ===
-time:      21 Aug 2026, 09:23 PM
-successes: 199
-failures:  1
+time:      25 Aug 2026, 10:35 PM
+successes: 200
+failures:  0
 total:     200

@@ -3,11 +3,11 @@
 	(generator "eeschema")
 	(generator_version "10.0")
 	(uuid "37f7ddc9-6743-427d-8e67-6dc181c0e547")
-	(paper "User" 177.8 127)
+	(paper "User" 215.9 127)
 	(lib_symbols)
 	(rectangle
-		(start 97.79 83.82)
-		(end 149.86 102.87)
+		(start 86.36 86.36)
+		(end 138.43 105.41)
 		(stroke
 			(width 0)
 			(type default)
@@ -18,8 +18,8 @@
 		(uuid "97fba925-b369-46e0-acd0-717e8f5d40cd")
 	)
 	(rectangle
-		(start 53.34 19.05)
-		(end 120.65 39.37)
+		(start 41.91 21.59)
+		(end 109.22 41.91)
 		(stroke
 			(width 0)
 			(type default)
@@ -30,8 +30,8 @@
 		(uuid "9abb284a-06a0-4059-a44f-ef81e67a5d1f")
 	)
 	(rectangle
-		(start 30.48 83.82)
-		(end 76.2 102.87)
+		(start 19.05 86.36)
+		(end 64.77 105.41)
 		(stroke
 			(width 0)
 			(type default)
@@ -41,9 +41,31 @@
 		)
 		(uuid "a10b9e86-8fde-4821-94da-9362ab09f09a")
 	)
+	(rectangle
+		(start 146.05 21.59)
+		(end 198.12 40.64)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid "eca65c9f-4d71-4088-b315-bce42c5aa730")
+	)
+	(text "USB VCOM\nSerial Output"
+		(exclude_from_sim no)
+		(at 170.18 31.75 0)
+		(effects
+			(font
+				(size 2.54 2.54)
+			)
+		)
+		(uuid "68f690f1-4cc6-44b0-9828-b73e5ca07c44")
+	)
 	(text "W5500\nEthernet Controller\nCS: W5500_CS"
 		(exclude_from_sim no)
-		(at 52.07 93.98 0)
+		(at 40.64 96.52 0)
 		(effects
 			(font
 				(size 2.54 2.54)
@@ -51,9 +73,19 @@
 		)
 		(uuid "6c11dd47-147c-4f70-8b91-e661fbc757e7")
 	)
-	(text "microSD\nCard\nCS: SD_CS\nMISO: 2kΩ series resistor"
+	(text "UARTE TX\nP0.06"
 		(exclude_from_sim no)
-		(at 123.19 93.98 0)
+		(at 130.81 30.48 0)
+		(effects
+			(font
+				(size 2.54 2.54)
+			)
+		)
+		(uuid "ce41619a-744a-4cdb-a6df-729e21b16aeb")
+	)
+	(text "microSD Card Module\nCS: SD_CS\nMISO: 2kΩ series resistor"
+		(exclude_from_sim no)
+		(at 111.76 96.52 0)
 		(effects
 			(font
 				(size 2.54 2.54)
@@ -63,7 +95,7 @@
 	)
 	(text "nRF52840 DK"
 		(exclude_from_sim no)
-		(at 86.36 30.48 0)
+		(at 74.93 33.02 0)
 		(effects
 			(font
 				(size 2.54 2.54)
@@ -73,7 +105,7 @@
 	)
 	(text "Shared SPI Bus\nSCK / MOSI / MISO"
 		(exclude_from_sim no)
-		(at 87.63 57.15 0)
+		(at 76.2 59.69 0)
 		(effects
 			(font
 				(size 2.54 2.54)
@@ -82,14 +114,14 @@
 		(uuid "f2cb7dbc-1fcc-4853-9616-31aa1401562a")
 	)
 	(junction
-		(at 86.36 71.12)
+		(at 74.93 73.66)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "f7f77e62-2d4d-483c-9c4c-93b18d760289")
 	)
 	(wire
 		(pts
-			(xy 86.36 39.37) (xy 86.36 52.07)
+			(xy 74.93 41.91) (xy 74.93 54.61)
 		)
 		(stroke
 			(width 0)
@@ -99,7 +131,7 @@
 	)
 	(wire
 		(pts
-			(xy 53.34 71.12) (xy 86.36 71.12)
+			(xy 41.91 73.66) (xy 74.93 73.66)
 		)
 		(stroke
 			(width 0)
@@ -109,7 +141,7 @@
 	)
 	(wire
 		(pts
-			(xy 86.36 71.12) (xy 120.65 71.12)
+			(xy 74.93 73.66) (xy 109.22 73.66)
 		)
 		(stroke
 			(width 0)
@@ -119,7 +151,7 @@
 	)
 	(wire
 		(pts
-			(xy 53.34 71.12) (xy 53.34 83.82)
+			(xy 41.91 73.66) (xy 41.91 86.36)
 		)
 		(stroke
 			(width 0)
@@ -129,7 +161,7 @@
 	)
 	(wire
 		(pts
-			(xy 120.65 71.12) (xy 120.65 83.82)
+			(xy 109.22 73.66) (xy 109.22 86.36)
 		)
 		(stroke
 			(width 0)
@@ -139,7 +171,27 @@
 	)
 	(wire
 		(pts
-			(xy 86.36 62.23) (xy 86.36 71.12)
+			(xy 109.22 30.48) (xy 123.19 30.48)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b0d6714e-d39b-4ad1-a9f1-0d230299b1a7")
+	)
+	(wire
+		(pts
+			(xy 139.7 30.48) (xy 146.05 30.48)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bdd11973-3651-4f6e-a619-d6526a292428")
+	)
+	(wire
+		(pts
+			(xy 74.93 64.77) (xy 74.93 73.66)
 		)
 		(stroke
 			(width 0)
