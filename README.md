@@ -29,16 +29,6 @@ A small web server built on the [nRF52840](https://www.nordicsemi.com/Products/n
 > module works reliably on a shared SPI bus without the resistor, you can omit it. A proper hardware fix will be covered in an
 > upcoming [write-up](https://loke.sh/blog/nrf52840-web-server).
 
-### Physical Setup
-
-<img src="./docs/physical-setup.png" alt="Physical setup" width="500" height="550">
-
-### Demo
-
-https://loke.sh/blog/nrf52840-web-server/demo.webm
-
-HTTP [stress-test](./docs/demo/http_stress_test.sh) results: [http_stress_test.log](./docs/demo/http_stress_test.log)
-
 ### Build and flash
 
 ```shell
@@ -99,6 +89,18 @@ http://192.168.29.70:8080
 - Static IP configuration
 - No HTTPS
 
+### Physical Setup
+
+<img src="./docs/physical-setup.png" alt="Physical setup" width="500" height="550">
+
+### Demo
+
+[demo.webm](https://github.com/user-attachments/assets/79ad940e-c54e-4cd3-94b9-3ffc7dd0dc0c)
+
+### Stress Test
+
+HTTP [stress-test](./docs/demo/http_stress_test.sh) results: [http_stress_test.log](./docs/demo/http_stress_test.log)
+
 ### Block diagram
 
 <img src="./docs/block-diagram.svg" alt="Block diagram" width="500">
@@ -113,5 +115,4 @@ See [PROGRESS.md](PROGRESS.md) for the implementation checklist.
 
 ### Documentation
 
-Detailed implementation notes, design decisions, and debugging write-ups are covered in the ongoing project series:
-https://loke.sh/blog/nrf52840-web-server
+Detailed implementation notes, design decisions, and debugging write-ups are covered in the ongoing project series: https://loke.sh/blog/nrf52840-web-server
