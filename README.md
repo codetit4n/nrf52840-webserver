@@ -97,6 +97,8 @@ http://192.168.29.70:8080
 
 [demo.webm](https://github.com/user-attachments/assets/79ad940e-c54e-4cd3-94b9-3ffc7dd0dc0c)
 
+[Click here to view](https://loke.sh/blog/nrf52840-web-server/demo.webm)
+
 ### Stress Test
 
 HTTP [stress-test](./docs/demo/http_stress_test.sh) results: [http_stress_test.log](./docs/demo/http_stress_test.log)
