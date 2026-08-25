@@ -35,7 +35,7 @@ A small web server built on the [nRF52840](https://www.nordicsemi.com/Products/n
 
 ### Demo
 
-![Demo](./docs/demo/demo.webm)
+https://loke.sh/blog/nrf52840-web-server/demo.webm
 
 HTTP [stress-test](./docs/demo/http_stress_test.sh) results: [http_stress_test.log](./docs/demo/http_stress_test.log)
 
